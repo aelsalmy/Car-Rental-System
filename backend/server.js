@@ -2,9 +2,16 @@ const bodyParser = require('body-parser')
 const express = require('express')
 const loginRoutes = require('./routes/authRoutes.js')
 const { sequelize } = require('./models/authModels.js')
+const cors = require('cors')
 
 
 const app = express()
+
+app.use(cors({
+    origin: 'http://localhost:4200',
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
 
 app.use(bodyParser.json())
 
