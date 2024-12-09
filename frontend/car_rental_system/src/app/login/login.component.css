@@ -1,0 +1,44 @@
+body{
+    background-color: red  ;
+}
+
+.login-container{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh
+}
+
+.login-header{
+    background-color: darkturquoise;
+    margin-bottom: 32px;
+}
+
+.submit-button{
+    margin-top: 16px;
+}
+
+mat-card {
+    max-width: 400px;
+    text-align: center;
+    box-shadow: 2px 5px 5px rgba(0, 0, 0, 0.5);
+    border-radius: 15px;
+}
+
+mat-form-field {
+    display: block;
+    text-align: center;
+    width: 300px;
+    height: 65px;
+}
+
+mat-card-header{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+
+
+
+

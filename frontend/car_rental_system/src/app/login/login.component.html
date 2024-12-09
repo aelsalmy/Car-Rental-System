@@ -1,0 +1,29 @@
+<div class = "login-container">
+    <mat-card appearance = "outlined">
+        <mat-card-header>
+                <mat-card-title>
+                    <h2>Login</h2>
+                </mat-card-title>
+        </mat-card-header>
+        <mat-card-content>  
+            <form #loginForm = "ngForm" (ngSubmit) = "onLogin()">
+                <mat-form-field>
+                    <mat-label>Input</mat-label>
+                    <input matInput>
+                </mat-form-field>  
+                <mat-form-field>
+                    <mat-label>Password</mat-label>
+                    <input matInput [type] = "hide() ? 'password' : 'text'"/>
+                    <button mat-icon-button matSuffix
+                        (click) = "switchVisibility($event)"
+                        [attr.aria-label] = "'Hide Password'"
+                        [attr.aria-pressed] = "hide()"
+                    >
+                        <mat-icon> {{hide()? 'visibility_off' : 'visibility'}} </mat-icon>
+                    </button>
+                </mat-form-field>   
+                <button mat-raised-button class = "submit-button" color = "primary">Login</button>
+            </form>
+        </mat-card-content>
+    </mat-card>
+</div>
