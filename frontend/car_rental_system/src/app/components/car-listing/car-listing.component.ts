@@ -11,6 +11,7 @@ import { RouterModule } from '@angular/router';
 import { CarService } from '../../services/car.service';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
     selector: 'app-car-listing',
@@ -39,6 +40,7 @@ export class CarListingComponent implements OnInit {
     isAdmin = true;
 
     constructor(
+        public authService: AuthService,
         private carService: CarService,
         private router: Router
     ) { }
@@ -111,4 +113,4 @@ export class CarListingComponent implements OnInit {
             }
         });
     }
-} 
+}
