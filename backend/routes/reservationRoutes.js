@@ -2,7 +2,8 @@ const express = require('express');
 const router = express.Router();
 const { Car, Reservation, Office } = require('../models/carModels');
 const { authenticateToken } = require('../middleware/auth');
-const { sequelize } = require('../config/database');
+const sequelize = require('../config/database');
+const { Op } = require('sequelize');
 
 router.post('/', authenticateToken, async (req, res) => {
     try {
