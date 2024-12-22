@@ -28,34 +28,38 @@
         </mat-form-field>
     </div>
 
-    <div class="car-grid">
-        <mat-card *ngFor="let car of filteredCars" class="car-card">
-            <mat-card-header>
-                <mat-card-title>{{car.model}} ({{car.year}})</mat-card-title>
-                <mat-card-subtitle>
-                    Plate: {{car.plateId}}
-                    <span [class]="'status-badge ' + car.status">{{car.status}}</span>
-                </mat-card-subtitle>
-            </mat-card-header>
-            <mat-card-content>
-                <p>Daily Rate: ${{car.dailyRate}}</p>
-                <p>Office: {{car.Office.name}} - {{car.Office.location}}</p>
-                <p>Specifications: {{car.specifications}}</p>
-            </mat-card-content>
-            <mat-card-actions>
-                <button mat-raised-button color="primary" *ngIf="car.status === 'active'" (click)="reserveCar(car.id)">
-                    Reserve Now
-                </button>
-                <button mat-raised-button color="warn" *ngIf="isAdmin" [matMenuTriggerFor]="statusMenu">
-                    Change Status
-                </button>
-                <mat-menu #statusMenu="matMenu">
-                    <button mat-menu-item (click)="updateStatus(car.id, 'active')" *ngIf="car.status !== 'active'">Set
-                        Active</button>
-                    <button mat-menu-item (click)="updateStatus(car.id, 'out_of_service')"
-                        *ngIf="car.status !== 'out_of_service'">Set Out of Service</button>
-                </mat-menu>
-            </mat-card-actions>
-        </mat-card>
-    </div>
+    <mat-grid-list cols = "4" rowHeight = "1:1" gutterSize = "16px">
+        <mat-grid-tile *ngFor="let car of filteredCars" >
+            <mat-card  class="car-card">
+                <mat-card-header>
+                    <mat-card-title>{{car.model}} ({{car.year}})</mat-card-title>
+                    <mat-card-subtitle>
+                        Plate: {{car.plateId}}
+                        <span [class]="'status-badge ' + car.status">{{car.status}}</span>
+                    </mat-card-subtitle>
+                </mat-card-header>
+                <mat-card-content>
+                    <p>Daily Rate: ${{car.dailyRate}}</p>
+                    <p>Office: {{car.Office.name}} - {{car.Office.location}}</p>
+                    <p>Specifications: {{car.specifications}}</p>
+                </mat-card-content>
+                <mat-card-actions>
+                    <div class = "card-buttons">
+                        <button mat-raised-button color="primary" *ngIf="car.status === 'active'" (click)="reserveCar(car.id)">
+                            Reserve Now
+                        </button>
+                        <button mat-raised-button color="warn" *ngIf="isAdmin" [matMenuTriggerFor]="statusMenu">
+                            Change Status
+                        </button>
+                        <mat-menu #statusMenu="matMenu">
+                            <button mat-menu-item (click)="updateStatus(car.id, 'active')" *ngIf="car.status !== 'active'">Set
+                                Active</button>
+                            <button mat-menu-item (click)="updateStatus(car.id, 'out_of_service')"
+                                *ngIf="car.status !== 'out_of_service'">Set Out of Service</button>
+                        </mat-menu>
+                    </div>
+                </mat-card-actions>
+            </mat-card>
+        </mat-grid-tile>
+    </mat-grid-list>
 </div>

@@ -12,7 +12,8 @@ const User = sequelize.define('User', {
             notEmpty: { msg: 'Username cannot be empty' }
         }
     },
-    password: { type: DataTypes.STRING(255), allowNull: false }
+    password: { type: DataTypes.STRING(255), allowNull: false },
+    user_role: { type: DataTypes.ENUM('user', 'admin',) , defaultValue: 'user' },
 },
     {
         tablename: 'user',

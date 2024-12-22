@@ -22,7 +22,7 @@ loginRoutes.post('/register', async (req, res) => {
 
         if (existingUser) {
             return res.status(409).json({
-                message: 'Username already exists. Please choose a different username.'
+                message: 'Username already exists'
             });
         }
 
@@ -36,11 +36,11 @@ loginRoutes.post('/register', async (req, res) => {
         });
 
         res.status(201).json({ message: 'User registered successfully' });
-    } catch (error) {
-        console.error('Registration error:', error);
+    } catch (error){
+        console.log('Registration error:', error);
         if (error.name === 'SequelizeUniqueConstraintError') {
             return res.status(409).json({
-                message: 'Username already exists. Please choose a different username.'
+                message: 'Username already exists'
             });
         }
         res.status(500).json({ message: 'Registration failed' });
@@ -62,11 +62,11 @@ loginRoutes.post(['', '/login'], async (req, res) => {
 
         if (await bcrypt.compare(password, user.password)) {
             const token = jwt.sign(
-                { id: user.id, username: user.username },
+                { id: user.id, username: user.username , role: user.user_role},
                 process.env.JWT_SECRET,
                 { expiresIn: '24h' }
             );
-            console.log('Generated token:', token);
+            console.log('Generated token: ', token);
             return res.status(200).json({
                 message: 'User Logged in Successfully',
                 token: token,

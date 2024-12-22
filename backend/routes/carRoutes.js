@@ -89,23 +89,11 @@ router.get('/', async (req, res) => {
             }],
             order: [['id', 'ASC']]
         });
-        console.log(`Found ${cars.length} cars:`, JSON.stringify(cars, null, 2));
+        //console.log(`Found ${cars.length} cars:`, JSON.stringify(cars, null, 2));
         res.json(cars);
     } catch (error) {
         console.error('Error fetching cars:', error);
         res.status(500).json({ message: 'Failed to fetch cars' });
-    }
-});
-
-router.get('/offices', async (req, res) => {
-    try {
-        const offices = await Office.findAll({
-            order: [['name', 'ASC']]
-        });
-        res.json(offices);
-    } catch (error) {
-        console.error('Error fetching offices:', error);
-        res.status(500).json({ message: 'Failed to fetch offices' });
     }
 });
 

@@ -30,7 +30,7 @@ export class LoginService {
   }
 
   getToken(): string | null {
-    const token = localStorage.getItem(this.tokenKey);
+    const token = localStorage.getItem('token');
     console.log('Getting token from storage:', token);
     return token;
   }

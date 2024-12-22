@@ -54,7 +54,6 @@ export class LoginComponent {
     this.loginService.login(this.username, this.password).subscribe({
       next: (response: LoginResponse) => {
         console.log('Login response:', response);
-        alert('User Logged in Successfully');
         this.errorFound.set(false);
         this.username = '';
         this.password = '';

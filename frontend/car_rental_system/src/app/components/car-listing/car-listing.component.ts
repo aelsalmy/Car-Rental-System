@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { MatCardModule } from '@angular/material/card';
+import { MatGridListModule} from '@angular/material/grid-list'
 import { MatButtonModule } from '@angular/material/button';
 import { MatSelectModule } from '@angular/material/select';
 import { MatMenuModule } from '@angular/material/menu';
@@ -23,7 +24,8 @@ import { FormsModule } from '@angular/forms';
         MatInputModule,
         CommonModule,
         RouterModule,
-        FormsModule
+        FormsModule,
+        MatGridListModule
     ],
     templateUrl: './car-listing.component.html',
     styleUrls: ['./car-listing.component.css']
@@ -62,6 +64,7 @@ export class CarListingComponent implements OnInit {
     }
 
     loadOffices() {
+        console.log("offices requested")
         this.carService.getOffices().subscribe({
             next: (offices) => {
                 console.log('Offices loaded:', offices);

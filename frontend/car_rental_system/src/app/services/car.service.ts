@@ -6,6 +6,7 @@ import { tap } from 'rxjs/operators';
 @Injectable({
     providedIn: 'root'
 })
+
 export class CarService {
     private apiUrl = 'http://localhost:3000/api';
 
@@ -19,6 +20,7 @@ export class CarService {
     }
 
     getOffices(): Observable<any[]> {
+        console.log("Offices Service invoked")
         return this.http.get<any[]>(`${this.apiUrl}/offices`);
     }
 

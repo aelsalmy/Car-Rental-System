@@ -3,6 +3,7 @@ const bodyParser = require('body-parser')
 const express = require('express')
 const loginRoutes = require('./routes/authRoutes.js')
 const carRoutes = require('./routes/carRoutes.js')
+const officeRoutes = require('./routes/officeRoutes.js')
 const reservationRoutes = require('./routes/reservationRoutes.js')
 const sequelize = require('./config/database')
 const cors = require('cors')
@@ -18,8 +19,8 @@ app.use(cors({
 app.use(bodyParser.json())
 app.use('/api/auth', loginRoutes)
 app.use('/api/cars', carRoutes)
-app.use('/api/offices', carRoutes)
-app.use('/api', reservationRoutes)
+app.use('/api/offices', officeRoutes)
+app.use('/api/reservations', reservationRoutes)
 
 console.log('JWT_SECRET loaded:', !!process.env.JWT_SECRET);
 

@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { LoginService } from './login.service';
 
@@ -21,8 +21,9 @@ export class ReservationService {
         }
         const reservationWithStatus = {
             ...reservationData,
-            status: 'rented'
+            status: 'rented',
         };
+
         return this.http.post(`${this.baseUrl}/reservations`, reservationWithStatus);
     }
 

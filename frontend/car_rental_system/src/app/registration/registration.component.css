@@ -6,7 +6,11 @@
 }
 
 mat-card {
-    max-width: 400px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    max-width: 350px;
+    width: 350px;
     text-align: center;
     box-shadow: 2px 5px 5px rgba(0, 0, 0, 0.5);
     border-radius: 15px;

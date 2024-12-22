@@ -7,6 +7,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
     const token = loginService.getToken();
 
     if (token) {
+        console.log('Intereptor Intervened')
         console.log('Original request:', req.url);
         const authReq = req.clone({
             headers: req.headers.set('Authorization', `Bearer ${token}`)

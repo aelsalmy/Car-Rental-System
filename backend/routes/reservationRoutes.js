@@ -4,7 +4,7 @@ const { Car, Reservation, Office } = require('../models/carModels');
 const { authenticateToken } = require('../middleware/auth');
 const { sequelize } = require('../config/database');
 
-router.post('/reservations', authenticateToken, async (req, res) => {
+router.post('/', authenticateToken, async (req, res) => {
     try {
         const { carId, startDate, endDate } = req.body;
         const customerId = req.user.id;
@@ -66,7 +66,7 @@ router.post('/reservations', authenticateToken, async (req, res) => {
     }
 });
 
-router.get('/reservations/my', authenticateToken, async (req, res) => {
+router.get('/my', authenticateToken, async (req, res) => {
     try {
         const reservations = await Reservation.findAll({
             where: { customerId: req.user.id },
@@ -84,7 +84,7 @@ router.get('/reservations/my', authenticateToken, async (req, res) => {
     }
 });
 
-router.patch('/reservations/:id/cancel', authenticateToken, async (req, res) => {
+router.patch('/:id/cancel', authenticateToken, async (req, res) => {
     try {
         const reservation = await Reservation.findOne({
             where: {
