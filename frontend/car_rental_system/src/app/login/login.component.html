@@ -1,34 +1,31 @@
-<div class = "login-container">
-    <mat-card appearance = "outlined">
+<div class="login-container">
+    <mat-card appearance="outlined">
         <mat-card-header>
-                <mat-card-title>
-                    <h2>Login</h2>
-                </mat-card-title>
+            <mat-card-title>
+                <h2>Login</h2>
+            </mat-card-title>
         </mat-card-header>
-        <mat-card-content>  
-            <form #loginForm = "ngForm" (ngSubmit) = "onLogin()">
+        <mat-card-content>
+            <form #loginForm="ngForm" (ngSubmit)="onLogin()">
                 <mat-form-field>
-                    <mat-label>Input</mat-label>
-                    <input matInput [(ngModel)] = "username" name = "username">
-                </mat-form-field>  
+                    <mat-label>Username</mat-label>
+                    <input matInput [(ngModel)]="username" name="username">
+                </mat-form-field>
                 <mat-form-field>
                     <mat-label>Password</mat-label>
-                    <input matInput [(ngModel)] = "password" name = "password" [type] = "hide() ? 'password' : 'text'"/>
-                    <button mat-icon-button matSuffix
-                        type = "button"
-                        (click) = "switchVisibility($event)"
-                        [attr.aria-label] = "'Hide Password'"
-                        [attr.aria-pressed] = "hide()"
-                    >
+                    <input matInput [(ngModel)]="password" name="password" [type]="hide() ? 'password' : 'text'" />
+                    <button mat-icon-button matSuffix type="button" (click)="switchVisibility($event)"
+                        [attr.aria-label]="'Hide Password'" [attr.aria-pressed]="hide()">
                         <mat-icon> {{hide()? 'visibility_off' : 'visibility'}} </mat-icon>
                     </button>
-                </mat-form-field> 
+                </mat-form-field>
                 <div class="invalid-message" *ngIf="errorFound()">
-                    <p >{{errorMessage}}</p>
+                    <p>{{errorMessage}}</p>
                 </div>
-               
-                <button mat-raised-button class = "submit-button" color = "primary">Login</button>
+
+                <button mat-raised-button class="submit-button" color="primary">Login</button>
             </form>
+            <p class="register-link">Don't have an account? <a routerLink="/register">Sign up now</a></p>
         </mat-card-content>
     </mat-card>
 </div>

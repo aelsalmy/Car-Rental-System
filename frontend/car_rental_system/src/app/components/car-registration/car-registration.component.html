@@ -1,0 +1,57 @@
+<div class="car-registration-container">
+    <mat-card>
+        <mat-card-header>
+            <mat-card-title>Register New Car</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+            <form [formGroup]="carForm" (ngSubmit)="onSubmit()">
+                <mat-form-field>
+                    <mat-label>Model</mat-label>
+                    <input matInput formControlName="model">
+                </mat-form-field>
+
+                <mat-form-field>
+                    <mat-label>Year</mat-label>
+                    <input matInput type="number" formControlName="year">
+                </mat-form-field>
+
+                <mat-form-field>
+                    <mat-label>Plate ID</mat-label>
+                    <input matInput formControlName="plateId">
+                </mat-form-field>
+
+                <mat-form-field>
+                    <mat-label>Status</mat-label>
+                    <mat-select formControlName="status">
+                        <mat-option value="active">Active</mat-option>
+                        <mat-option value="out_of_service">Out of Service</mat-option>
+                        <mat-option value="rented">Rented</mat-option>
+                    </mat-select>
+                </mat-form-field>
+
+                <mat-form-field>
+                    <mat-label>Office</mat-label>
+                    <mat-select formControlName="officeId">
+                        <mat-option *ngFor="let office of offices" [value]="office.id">
+                            {{office.name}} - {{office.location}}
+                        </mat-option>
+                    </mat-select>
+                </mat-form-field>
+
+                <mat-form-field>
+                    <mat-label>Daily Rate</mat-label>
+                    <input matInput type="number" formControlName="dailyRate">
+                </mat-form-field>
+
+                <mat-form-field>
+                    <mat-label>Specifications</mat-label>
+                    <textarea matInput formControlName="specifications"></textarea>
+                </mat-form-field>
+
+                <button mat-raised-button color="primary" type="submit" [disabled]="!carForm.valid">
+                    Register Car
+                </button>
+            </form>
+        </mat-card-content>
+    </mat-card>
+</div>

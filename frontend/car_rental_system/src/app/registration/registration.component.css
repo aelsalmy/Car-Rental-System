@@ -1,26 +1,8 @@
-body {
-    background-color: red;
-}
-
-.login-container {
+.registration-container {
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 100vh
-}
-
-.login-header {
-    background-color: darkturquoise;
-    margin-bottom: 32px;
-}
-
-.submit-button {
-    margin-top: 8px;
-}
-
-.invalid-message {
-    color: red;
-    font: caption;
+    height: 100vh;
 }
 
 mat-card {
@@ -35,6 +17,7 @@ mat-form-field {
     text-align: center;
     width: 300px;
     height: 65px;
+    margin-bottom: 10px;
 }
 
 mat-card-header {
@@ -43,15 +26,25 @@ mat-card-header {
     align-items: center;
 }
 
-.register-link {
+.submit-button {
+    margin-top: 20px;
+    width: 200px;
+}
+
+.invalid-message {
+    color: red;
+    font: caption;
+}
+
+.login-link {
     margin-top: 20px;
 }
 
-.register-link a {
+.login-link a {
     color: #3f51b5;
     text-decoration: none;
 }
 
-.register-link a:hover {
+.login-link a:hover {
     text-decoration: underline;
 }

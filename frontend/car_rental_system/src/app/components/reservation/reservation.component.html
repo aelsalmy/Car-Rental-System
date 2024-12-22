@@ -1,0 +1,30 @@
+<div class="reservation-container" *ngIf="car">
+    <mat-card class="reservation-card">
+        <mat-card-header>
+            <mat-card-title>{{car.model}} ({{car.year}})</mat-card-title>
+            <mat-card-subtitle>Daily Rate: ${{car.dailyRate}}</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+            <form [formGroup]="reservationForm">
+                <mat-form-field>
+                    <mat-label>Start Date</mat-label>
+                    <input matInput [matDatepicker]="startPicker" formControlName="startDate">
+                    <mat-datepicker-toggle matSuffix [for]="startPicker"></mat-datepicker-toggle>
+                    <mat-datepicker #startPicker></mat-datepicker>
+                </mat-form-field>
+
+                <mat-form-field>
+                    <mat-label>End Date</mat-label>
+                    <input matInput [matDatepicker]="endPicker" formControlName="endDate">
+                    <mat-datepicker-toggle matSuffix [for]="endPicker"></mat-datepicker-toggle>
+                    <mat-datepicker #endPicker></mat-datepicker>
+                </mat-form-field>
+            </form>
+        </mat-card-content>
+        <mat-card-actions>
+            <button mat-raised-button color="primary" (click)="onSubmit()" [disabled]="!reservationForm.valid">
+                Confirm Reservation
+            </button>
+        </mat-card-actions>
+    </mat-card>
+</div>

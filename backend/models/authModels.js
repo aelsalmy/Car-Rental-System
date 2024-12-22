@@ -1,23 +1,24 @@
-const {Sequelize , DataTypes} = require('sequelize');
-require('dotenv').config();
+const { DataTypes } = require('sequelize');
+const sequelize = require('../config/database');
 
-const sequelize = new Sequelize(process.env.DB_NAME , process.env.DB_USER , process.env.DB_PASSWORD, {
-        host: process.env.DB_HOST,
-        port: 3307,
-        dialect: 'mysql'
-    }
-)
-
-const User = sequelize.define('User',{
-        id: {type: DataTypes.INTEGER , allowNull: false , autoIncrement: true , primaryKey: true},
-        username: {type: DataTypes.STRING(255)},
-        password: {type: DataTypes.STRING(255)}
+const User = sequelize.define('User', {
+    id: { type: DataTypes.INTEGER, allowNull: false, autoIncrement: true, primaryKey: true },
+    username: {
+        type: DataTypes.STRING(255),
+        allowNull: false,
+        unique: true,
+        validate: {
+            notNull: { msg: 'Username is required' },
+            notEmpty: { msg: 'Username cannot be empty' }
+        }
     },
+    password: { type: DataTypes.STRING(255), allowNull: false }
+},
     {
         tablename: 'user',
         timestamps: false,
-        freezeTableName: true
-    }
-)
+        freezeTableName: true,
+        indexes: [{ unique: true, fields: ['username'] }]
+    });
 
-module.exports = {sequelize , User}
+module.exports = { User };

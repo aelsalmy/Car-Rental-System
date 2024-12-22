@@ -1,0 +1,16 @@
+.registration-form {
+    max-width: 500px;
+    margin: 20px auto;
+    padding: 20px;
+}
+
+mat-form-field {
+    width: 100%;
+    margin-bottom: 15px;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
