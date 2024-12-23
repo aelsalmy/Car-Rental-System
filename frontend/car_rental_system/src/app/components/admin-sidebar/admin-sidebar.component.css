@@ -1,0 +1,119 @@
+.admin-sidebar-container {
+  position: relative;
+}
+
+.hamburger-btn {
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  z-index: 1000;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 50%;
+  background-color: #fff;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.hamburger-btn:hover {
+  background-color: #f5f5f5;
+}
+
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: -300px;
+  height: 100vh;
+  width: 300px;
+  background-color: #fff;
+  box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+  transition: left 0.3s ease;
+  z-index: 1001;
+}
+
+.sidebar.open {
+  left: 0;
+}
+
+.sidebar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background-color: #1976d2;
+  color: white;
+}
+
+.sidebar-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+}
+
+.sidebar-content {
+  padding: 1rem;
+}
+
+.menu-section {
+  margin-bottom: 1rem;
+}
+
+.menu-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  color: #333;
+  font-weight: 500;
+}
+
+.menu-group i {
+  color: #1976d2;
+}
+
+.submenu {
+  list-style: none;
+  padding-left: 2.5rem;
+  margin: 0.5rem 0;
+}
+
+.submenu li {
+  margin: 0.5rem 0;
+}
+
+.submenu a {
+  text-decoration: none;
+  color: #666;
+  display: block;
+  padding: 0.3rem 0;
+  transition: color 0.2s;
+}
+
+.submenu a:hover {
+  color: #1976d2;
+}
+
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0,0,0,0.5);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s;
+  z-index: 1000;
+}
+
+.overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
