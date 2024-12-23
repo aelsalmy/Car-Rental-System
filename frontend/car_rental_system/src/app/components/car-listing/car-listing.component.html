@@ -1,9 +1,6 @@
 <div class="car-listing-container">
     <div class="header">
         <h2>Dashboard</h2>
-        <button mat-raised-button color="primary" routerLink="/register-car">
-            Register New Car
-        </button>
     </div>
 
     <div class="filters">
@@ -28,7 +25,7 @@
         </mat-form-field>
     </div>
 
-    <mat-grid-list cols = "4" rowHeight = "1:1" gutterSize = "16px">
+    <mat-grid-list cols="4" rowHeight="1:1" gutterSize="16px">
         <mat-grid-tile *ngFor="let car of filteredCars" >
             <mat-card  class="car-card">
                 <mat-card-header>
@@ -48,7 +45,7 @@
                         <button mat-raised-button color="primary" *ngIf="car.status === 'active'" (click)="reserveCar(car.id)">
                             Reserve Now
                         </button>
-                        <button mat-raised-button color="warn" *ngIf="isAdmin" [matMenuTriggerFor]="statusMenu">
+                        <button mat-raised-button color="warn" *ngIf="authService.isAdmin$ | async" [matMenuTriggerFor]="statusMenu">
                             Change Status
                         </button>
                         <mat-menu #statusMenu="matMenu">
