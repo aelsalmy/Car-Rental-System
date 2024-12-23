@@ -1,5 +1,6 @@
 const express = require('express')
 const { User } = require('../models/authModels')
+const { Customer } = require('../models/carModels')
 const bcrypt = require('bcrypt')
 const loginRoutes = express.Router()
 const jwt = require('jsonwebtoken')
@@ -11,7 +12,7 @@ loginRoutes.get('', async (req, res) => {
 //Route to create a user
 loginRoutes.post('/register', async (req, res) => {
     try {
-        const { username, password } = req.body;
+        const { username, password , name ,  email , phone , address} = req.body;
 
         // Check if username already exists
         const existingUser = await User.findOne({
@@ -30,10 +31,18 @@ loginRoutes.post('/register', async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
 
         // Create new user
-        await User.create({
+        const newUser = await User.create({
             username: username,
             password: hashedPassword
         });
+
+        await Customer.create({
+            name: name,
+            email: email,
+            phone: phone,
+            address: address,
+            userId: newUser.id
+        })
 
         res.status(201).json({ message: 'User registered successfully' });
     } catch (error){

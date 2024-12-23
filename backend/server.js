@@ -22,6 +22,7 @@ app.use('/api/cars', carRoutes)
 app.use('/api/offices', officeRoutes)
 app.use('/api/reservations', reservationRoutes)
 
+
 console.log('JWT_SECRET loaded:', !!process.env.JWT_SECRET);
 
 sequelize.sync({ alter: true, logging: false })
