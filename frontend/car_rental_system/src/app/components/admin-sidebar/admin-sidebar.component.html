@@ -21,7 +21,7 @@
           
           <ul class="submenu">
             <li *ngFor="let subItem of item.children">
-              <a [routerLink]="subItem.route" (click)="toggleSidebar()">
+              <a (click) = "onChangeView(subItem.page)">
                 {{subItem.title}}
               </a>
             </li>

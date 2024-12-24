@@ -35,7 +35,7 @@ import { Router } from '@angular/router';
       justify-content: space-between;
       align-items: center;
       padding: 8px 16px;
-      background-color: white;
+      background-color: #1976d2;
       border-bottom: 1px solid #e0e0e0;
       position: fixed;
       top: 0;
@@ -57,6 +57,7 @@ import { Router } from '@angular/router';
     .logout-button {
       display: flex;
       align-items: center;
+      background-color: white;
       gap: 4px;
     }
 

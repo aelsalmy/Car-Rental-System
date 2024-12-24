@@ -9,6 +9,7 @@ import { LoginService } from '../services/login.service';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { LoginResponse } from '../interfaces/auth.interface';
+import { AuthService } from '../services/auth.service';
 
 @Component({
   selector: 'app-login',
@@ -37,6 +38,7 @@ export class LoginComponent {
 
   constructor(
     private loginService: LoginService,
+    private authService: AuthService,
     private router: Router
   ) { }
 
@@ -57,7 +59,15 @@ export class LoginComponent {
         this.errorFound.set(false);
         this.username = '';
         this.password = '';
-        this.router.navigate(['/cars']);
+        if(this.authService.isAdmin()){
+          console.log('admin')
+          this.router.navigate(['/admin']);
+        }
+        else{
+          console.log('user')
+          this.router.navigate(['/cars']);
+        }
+        
       },
       error: (error) => {
         console.log('Error Found: ', error.status, error.error)

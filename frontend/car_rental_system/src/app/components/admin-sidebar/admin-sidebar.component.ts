@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, EventEmitter, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 
@@ -10,6 +10,9 @@ import { RouterModule } from '@angular/router';
   styleUrls: ['./admin-sidebar.component.css']
 })
 export class AdminSidebarComponent {
+
+  @Output() changeView = new EventEmitter<string>();
+
   isOpen = false;
   
   menuItems = [
@@ -17,34 +20,39 @@ export class AdminSidebarComponent {
       title: 'Car Management',
       icon: 'directions_car',
       children: [
-        { title: 'Register New Car', route: '/admin/cars/register' },
-        { title: 'Update Car Status', route: '/admin/cars/status' },
-        { title: 'View All Cars', route: '/admin/cars/view-all' }
+        { title: 'Register New Car', page: 'RegisterCar' },
+        { title: 'Update Car Status', page: 'CarList' },
+        { title: 'View All Cars', page: 'CarList' }
       ]
     },
     {
       title: 'Reports',
       icon: 'assessment',
       children: [
-        { title: 'Period Reservations', route: '/admin/reports/period-reservations' },
-        { title: 'Car Reservations', route: '/admin/reports/car-reservations' },
-        { title: 'Car Status Report', route: '/admin/reports/car-status' },
-        { title: 'Customer Reservations', route: '/admin/reports/customer-reservations' },
-        { title: 'Payment Reports', route: '/admin/reports/payments' }
+        { title: 'Period Reservations', page: 'CarList' },
+        { title: 'Car Reservations', page: 'CarList' },
+        { title: 'Car Status Report', page: 'CarList' },
+        { title: 'Customer Reservations', page: 'CarList' },
+        { title: 'Payment Reports', page: 'CarList' }
       ]
     },
     {
       title: 'Advanced Search',
       icon: 'search',
       children: [
-        { title: 'Search Cars', route: '/admin/search/cars' },
-        { title: 'Search Customers', route: '/admin/search/customers' },
-        { title: 'Search Reservations', route: '/admin/search/reservations' }
+        { title: 'Search Cars', page: 'CarList' },
+        { title: 'Search Customers', page: 'CarList' },
+        { title: 'Search Reservations', page: 'CarList' }
       ]
     }
   ];
 
   toggleSidebar() {
     this.isOpen = !this.isOpen;
+  }
+
+  onChangeView(newView: string){
+    this.toggleSidebar()
+    this.changeView.emit(newView)
   }
 }
