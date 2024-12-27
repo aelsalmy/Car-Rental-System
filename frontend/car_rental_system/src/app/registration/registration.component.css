@@ -3,6 +3,9 @@
     align-items: center;
     justify-content: center;
     height: 100vh;
+    max-width: 500px;
+    margin: 2rem auto;
+    padding: 1rem;
 }
 
 mat-card {
@@ -19,9 +22,9 @@ mat-card {
 mat-form-field {
     display: block;
     text-align: center;
-    width: 300px;
+    width: 100%;
     height: 65px;
-    margin-bottom: 10px;
+    margin-bottom: 0.5rem;
 }
 
 mat-card-header {
@@ -30,14 +33,22 @@ mat-card-header {
     align-items: center;
 }
 
-.submit-button {
-    margin-top: 20px;
-    width: 200px;
+.button-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1rem;
 }
 
-.invalid-message {
-    color: red;
-    font: caption;
+.error-message {
+    color: #f44336;
+    margin: 1rem 0;
+    text-align: center;
+}
+
+button[type="submit"] {
+    width: 200px;
 }
 
 .login-link {

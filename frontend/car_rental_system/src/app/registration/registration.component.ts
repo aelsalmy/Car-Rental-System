@@ -1,13 +1,13 @@
 import { Component, signal } from '@angular/core';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { Router, RouterModule } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { RegistrationService } from '../services/registration.service';
 import { CommonModule } from '@angular/common';
-import { Router, RouterModule } from '@angular/router';
+import { MatIconModule } from '@angular/material/icon';
+import { RegistrationService } from '../services/registration.service';
 
 @Component({
   selector: 'app-registration',
@@ -18,8 +18,8 @@ import { Router, RouterModule } from '@angular/router';
     ReactiveFormsModule,
     MatInputModule,
     MatButtonModule,
-    MatIconModule,
     CommonModule,
+    MatIconModule,
     RouterModule
   ],
   templateUrl: './registration.component.html',
@@ -39,34 +39,44 @@ export class RegistrationComponent {
     this.registrationForm = this.fb.group({
       username: ['', [Validators.required, Validators.minLength(3)]],
       password: ['', [Validators.required, Validators.minLength(6)]],
-      confirmPassword: ['', [Validators.required]]
+      confirmPassword: ['', [Validators.required]],
+      name: ['', [Validators.required]],
+      email: ['', [Validators.required, Validators.email]],
+      phone: ['', [Validators.required, Validators.pattern('^[0-9]{11}$')]],
+      address: ['', [Validators.required]]
     }, { validator: this.passwordMatchValidator });
   }
 
   passwordMatchValidator(g: FormGroup) {
     return g.get('password')?.value === g.get('confirmPassword')?.value
-      ? null : { mismatch: true };
+      ? null
+      : { 'mismatch': true };
   }
 
   switchVisibility(event: MouseEvent) {
-    this.hide.set(!this.hide());
-    event.stopPropagation();
+    event.preventDefault();
+    this.hide.update(v => !v);
   }
 
   onSubmit() {
     if (this.registrationForm.valid) {
-      const { username, password } = this.registrationForm.value;
-      this.registrationService.register(username, password).subscribe({
+      const formData = this.registrationForm.value;
+      
+      this.registrationService.register(
+        formData.username,
+        formData.password,
+        formData.name,
+        formData.email,
+        formData.phone,
+        formData.address
+      ).subscribe({
         next: () => {
-          alert('Registration successful!');
+          this.errorFound.set(false);
           this.router.navigate(['/login']);
         },
         error: (error) => {
-          this.errorMessage = error.error.message || 'Registration failed';
           this.errorFound.set(true);
-          if (error.error.message.includes('Username already exists')) {
-            this.registrationForm.get('username')?.setErrors({ 'duplicate': true });
-          }
+          this.errorMessage = error.error.message || 'Registration failed';
         }
       });
     }

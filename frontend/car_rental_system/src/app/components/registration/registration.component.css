@@ -1,0 +1,20 @@
+.registration-container {
+    max-width: 500px;
+    margin: 2rem auto;
+    padding: 1rem;
+}
+
+mat-form-field {
+    width: 100%;
+    margin-bottom: 1rem;
+}
+
+.button-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 1rem;
+}
+
+button {
+    width: 200px;
+}

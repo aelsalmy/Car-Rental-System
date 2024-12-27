@@ -49,8 +49,18 @@ export class ReservationComponent implements OnInit {
     }
 
     ngOnInit() {
-        this.carId = Number(this.route.snapshot.params['id']);
-        this.loadCarDetails();
+        // Subscribe to query parameters
+        this.route.queryParams.subscribe(params => {
+            const carId = params['carId'];
+            if (!carId) {
+                this.snackBar.open('No car selected', 'Close', { duration: 3000 });
+                this.router.navigate(['/cars']);
+                return;
+            }
+            
+            this.carId = Number(carId);
+            this.loadCarDetails();
+        });
     }
 
     loadCarDetails() {
@@ -73,43 +83,36 @@ export class ReservationComponent implements OnInit {
 
     onSubmit() {
         if (this.reservationForm.valid) {
-            const reservationData = {
-                carId: this.carId,
-                startDate: this.reservationForm.value.startDate,
-                endDate: this.reservationForm.value.endDate,
-                status: 'rented'
-            };
+            const startDate = new Date(this.reservationForm.value.startDate);
+            const endDate = new Date(this.reservationForm.value.endDate);
+            
+            // Validate dates
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            if (startDate < today) {
+                this.snackBar.open('Start date cannot be in the past', 'Close', { duration: 3000 });
+                return;
+            }
+            
+            if (endDate <= startDate) {
+                this.snackBar.open('End date must be after start date', 'Close', { duration: 3000 });
+                return;
+            }
 
-            this.reservationService.createReservation(reservationData).subscribe({
-                next: (response) => {
-                    this.reservationService.updateCarStatus(this.carId, 'rented').subscribe({
-                        next: () => {
-                            this.snackBar.open('Car reserved successfully!', 'Close', {
-                                duration: 3000,
-                                horizontalPosition: 'center',
-                                verticalPosition: 'top'
-                            });
-                            alert('Car reserved successfully!');
-                            this.router.navigate(['/cars']);
-                        },
-                        error: (error) => {
-                            console.error('Error updating car status:', error);
-                            this.snackBar.open('Error updating car status', 'Close', { duration: 3000 });
-                        }
-                    });
-                },
-                error: (error) => {
-                    console.error('Error creating reservation:', error);
-                    if (error.status === 401) {
-                        this.loginService.logout();
-                        this.snackBar.open('Please login to make a reservation', 'Close', { duration: 3000 });
-                        this.router.navigate(['/login']);
-                    } else {
-                        const errorMessage = error.error?.message || 'Error creating reservation';
-                        this.snackBar.open(errorMessage, 'Close', { duration: 3000 });
-                    }
+            // Calculate total amount
+            const days = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 3600 * 24));
+            const totalAmount = days * this.car.dailyRate;
+
+            // Navigate to payment with reservation details
+            this.router.navigate(['/payment'], {
+                queryParams: {
+                    carId: this.carId,
+                    startDate: startDate.toISOString(),
+                    endDate: endDate.toISOString(),
+                    totalAmount: totalAmount
                 }
             });
         }
     }
-} 
+}

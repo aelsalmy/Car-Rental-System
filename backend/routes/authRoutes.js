@@ -4,6 +4,7 @@ const { Customer } = require('../models/carModels')
 const bcrypt = require('bcrypt')
 const loginRoutes = express.Router()
 const jwt = require('jsonwebtoken')
+const sequelize = require('../config/database'); // Assuming you have a db config file
 
 loginRoutes.get('', async (req, res) => {
     res.send("TEST")
@@ -12,7 +13,16 @@ loginRoutes.get('', async (req, res) => {
 //Route to create a user
 loginRoutes.post('/register', async (req, res) => {
     try {
-        const { username, password , name ,  email , phone , address} = req.body;
+        console.log('Received registration data:', req.body);
+        const { username, password, customerInfo } = req.body;
+        
+        if (!customerInfo || !customerInfo.name || !customerInfo.email) {
+            return res.status(400).json({
+                message: 'Customer information is required'
+            });
+        }
+
+        const { name, email, phone, address } = customerInfo;
 
         // Check if username already exists
         const existingUser = await User.findOne({
@@ -27,14 +37,59 @@ loginRoutes.post('/register', async (req, res) => {
             });
         }
 
-        // Hash password before saving
-        const hashedPassword = await bcrypt.hash(password, 10);
-
-        // Create new user
-        const newUser = await User.create({
-            username: username,
-            password: hashedPassword
+        // Check if email already exists
+        const existingCustomer = await Customer.findOne({
+            where: {
+                email: email
+            }
         });
+
+        if (existingCustomer) {
+            return res.status(409).json({
+                message: 'Email already exists'
+            });
+        }
+
+        // Use transaction to ensure both user and customer are created
+        const result = await sequelize.transaction(async (t) => {
+            // Hash password before saving
+            const hashedPassword = await bcrypt.hash(password, 10);
+
+            // Create new user
+            const newUser = await User.create({
+                username: username,
+                password: hashedPassword,
+                user_role: 'user'
+            }, { transaction: t });
+
+            console.log('Created user:', newUser.toJSON());
+
+            // Create customer record
+            const customer = await Customer.create({
+                name,
+                email,
+                phone,
+                address,
+                userId: newUser.id
+            }, { transaction: t });
+
+            console.log('Created customer:', customer.toJSON());
+
+            return { user: newUser, customer };
+        });
+
+        console.log('Registration successful:', {
+            userId: result.user.id,
+            customerId: result.customer.id
+        });
+
+        res.status(201).json({ 
+            message: 'User registered successfully',
+            userId: result.user.id,
+            customerId: result.customer.id
+        });
+    } catch (error) {
+        console.error('Registration error:', error);
 
         await Customer.create({
             name: name,
@@ -49,14 +104,18 @@ loginRoutes.post('/register', async (req, res) => {
         console.log('Registration error:', error);
         if (error.name === 'SequelizeUniqueConstraintError') {
             return res.status(409).json({
-                message: 'Username already exists'
+                message: 'Username or email already exists'
             });
         }
+        res.status(500).json({ 
+            message: 'Registration failed',
+            error: error.message,
+            details: error.original ? error.original.sqlMessage : null
+        });
+
         res.status(500).json({ message: 'Registration failed: ' + error });
     }
 });
-
-
 
 loginRoutes.post(['', '/login'], async (req, res) => {
     const { username, password } = req.body;

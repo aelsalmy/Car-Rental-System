@@ -19,12 +19,13 @@ export class ReservationService {
         if (!token) {
             throw new Error('No authentication token found');
         }
-        const reservationWithStatus = {
-            ...reservationData,
-            status: 'rented',
+
+        // Don't set the status here, let the backend handle it
+        const reservationRequest = {
+            ...reservationData
         };
 
-        return this.http.post(`${this.baseUrl}/reservations`, reservationWithStatus);
+        return this.http.post(`${this.baseUrl}/reservations`, reservationRequest);
     }
 
     getCarDetails(carId: number): Observable<any> {
@@ -46,6 +47,7 @@ export class ReservationService {
     updateCarStatus(carId: number, status: string): Observable<any> {
         return this.http.patch(`${this.baseUrl}/cars/${carId}/status`, { status });
     }
+
     getAllReservations(): Observable<any[]>{
         return this.http.get<any[]>(`${this.baseUrl}/reservations/getAll`);
     }
