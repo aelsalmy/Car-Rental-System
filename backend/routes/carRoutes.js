@@ -89,7 +89,7 @@ router.get('/', async (req, res) => {
             }],
             order: [['id', 'ASC']]
         });
-        //console.log(`Found ${cars.length} cars:`, JSON.stringify(cars, null, 2));
+
         res.json(cars);
     } catch (error) {
         console.error('Error fetching cars:', error);

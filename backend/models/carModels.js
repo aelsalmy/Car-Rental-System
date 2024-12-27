@@ -101,6 +101,8 @@ Car.hasMany(Reservation, { foreignKey: 'carId' });
 Reservation.belongsTo(Car, { foreignKey: 'carId' });
 
 Customer.hasMany(Reservation, { foreignKey: 'customerId' });
+User.belongsTo(Customer , {foreignKey: 'userId'})
+
 Reservation.belongsTo(Customer, { foreignKey: 'customerId' });
 
 Customer.belongsTo(User, { foreignKey: 'userId' });

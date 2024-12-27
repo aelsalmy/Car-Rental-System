@@ -20,7 +20,6 @@ export class CarService {
     }
 
     getOffices(): Observable<any[]> {
-        console.log("Offices Service invoked")
         return this.http.get<any[]>(`${this.apiUrl}/offices`);
     }
 

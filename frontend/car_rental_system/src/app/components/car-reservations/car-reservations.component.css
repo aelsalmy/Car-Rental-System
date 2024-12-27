@@ -1,0 +1,45 @@
+.buttons-section{
+    display: flex;
+    justify-content: space-between;
+}
+
+.status-badge {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    margin-left: 8px;
+}
+
+.status-badge.pending {
+    background-color: rgb(217, 192, 69);
+    color: white;
+}
+
+.status-badge.cancelled {
+    background-color: #f44336;
+    color: white;
+}
+
+.status-badge.completed {
+    background-color: #117420;
+    color: white;
+}
+
+.status-badge.active {
+    background-color: #4bbb5c;
+    color: white;
+}
+
+.hamburger-btn {
+    color:#f44336;
+    display: flex;
+    text-align: center;
+    justify-content: center;
+    margin-left: 8px;
+}
+
+.cost{
+    font-size: 18px;
+    margin-left: 8px;
+    font-weight: bold;
+}

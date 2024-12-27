@@ -90,6 +90,18 @@ loginRoutes.post('/register', async (req, res) => {
         });
     } catch (error) {
         console.error('Registration error:', error);
+
+        await Customer.create({
+            name: name,
+            email: email,
+            phone: phone,
+            address: address,
+            userId: newUser.id
+        });
+
+        res.status(201).json({ message: 'User registered successfully' });
+    } catch (error){
+        console.log('Registration error:', error);
         if (error.name === 'SequelizeUniqueConstraintError') {
             return res.status(409).json({
                 message: 'Username or email already exists'
@@ -100,6 +112,8 @@ loginRoutes.post('/register', async (req, res) => {
             error: error.message,
             details: error.original ? error.original.sqlMessage : null
         });
+
+        res.status(500).json({ message: 'Registration failed: ' + error });
     }
 });
 

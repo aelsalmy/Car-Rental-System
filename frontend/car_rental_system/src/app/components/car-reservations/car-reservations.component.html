@@ -1,0 +1,34 @@
+<mat-list *ngFor = "let reservation of reservations">
+    <mat-card>
+        <mat-card-header>
+            <mat-card-title>{{reservation.Car.model}} ({{reservation.Car.year}})</mat-card-title>
+            <mat-card-subtitle>Rented by: {{reservation.Customer.name}}</mat-card-subtitle>
+            <mat-card-subtitle>Reservation Status: 
+                <span [class]="'status-badge ' + reservation.status">{{reservation.status}}</span>
+            </mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+            <div>
+                <p>Reservation Starts at: {{ reservation.startDate | date: 'yyyy-MM-dd' }}</p>
+                <p>Reservation Ends at: {{ reservation.endDate | date: 'yyyy-MM-dd' }}</p> 
+            </div>
+            
+        </mat-card-content>
+        <mat-card-actions class = "buttons-section">
+            <div class = "cost">
+                <p>Total Cost: {{reservation.totalCost}}</p>
+            </div>
+            <div style = "display: flex; gap: 10px;">
+                <button mat-button color="primary"> 
+                    Update Status  
+                </button>
+                <button mat-button color="primary" style = "margin-left: 8px;" (click)="openCustomerDialog(reservation.Customer)"> 
+                    View Customer Info 
+                </button>
+                <button mat-button class = "hamburger-btn" (click) = "onDelete(reservation.id)">
+                    <mat-icon class = "delete-icon" aria-hidden="false" aria-label="Example home icon" fontIcon="delete" color = "warn"></mat-icon>
+                </button>
+            </div>
+        </mat-card-actions>
+    </mat-card>
+</mat-list>

@@ -1,65 +1,21 @@
 const express = require('express');
 const router = express.Router();
 const { Car, Reservation, Office, Customer } = require('../models/carModels');
-const { authenticateToken } = require('../middleware/auth');
+const { authenticateToken , authenticateAdmin} = require('../middleware/auth');
 const sequelize = require('../config/database');
 const { Op } = require('sequelize');
 
-router.post('/', authenticateToken, async (req, res) => {
-    const t = await sequelize.transaction();
-    
+router.post('/', authenticateToken, async (req, res) => {           //route to insert a reservation
     try {
-        const { carId, startDate, endDate, paymentMethod, paymentStatus } = req.body;
-        const userId = req.user.id;
-
-        console.log('Creating reservation for user:', userId);
-
-        // Get the customer ID associated with the user
-        const customer = await Customer.findOne({
-            where: { userId: userId }
-        }, { transaction: t });
-
-        console.log('Found customer:', customer ? customer.toJSON() : null);
-
-        if (!customer) {
-            await t.rollback();
-            return res.status(404).json({ 
-                message: 'Customer profile not found. Please ensure you have completed registration.',
-                userId: userId
-            });
-        }
-
-        const customerId = customer.id;
-
-        // Log the values we'll use for the reservation
-        console.log('Creating reservation with:', {
-            carId,
-            customerId,
-            startDate,
-            endDate,
-            paymentMethod,
-            paymentStatus
-        });
-
-        // Validate dates are not in the past
-        const currentDate = new Date();
-        if (new Date(startDate) < currentDate) {
-            await t.rollback();
-            return res.status(400).json({ message: 'Cannot make reservations for past dates' });
-        }
-
-        if (new Date(endDate) <= new Date(startDate)) {
-            await t.rollback();
-            return res.status(400).json({ message: 'End date must be after start date' });
-        }
+        const { carId, startDate, endDate } = req.body;
+        const userid = req.user.id;
 
         // Check if car exists and is available
         const car = await Car.findOne({
             where: { id: carId, status: 'active' }
-        }, { transaction: t });
+        });
 
         if (!car) {
-            await t.rollback();
             return res.status(404).json({ message: 'Car not available' });
         }
 
@@ -74,19 +30,16 @@ router.post('/', authenticateToken, async (req, res) => {
                     },
                     {
                         endDate: { [Op.between]: [startDate, endDate] }
-                    },
-                    {
-                        [Op.and]: [
-                            { startDate: { [Op.lte]: startDate } },
-                            { endDate: { [Op.gte]: endDate } }
-                        ]
                     }
                 ]
             }
-        }, { transaction: t });
+        });
+
+        const customer = await Customer.findOne({
+            where: { userId: userid }
+        });
 
         if (overlapping) {
-            await t.rollback();
             return res.status(400).json({ message: 'Car already reserved for these dates' });
         }
 
@@ -94,35 +47,29 @@ router.post('/', authenticateToken, async (req, res) => {
         const days = Math.ceil((new Date(endDate) - new Date(startDate)) / (1000 * 60 * 60 * 24));
         const totalCost = days * car.dailyRate;
 
-        // Create reservation
-        const reservation = await Reservation.create({
-            carId,
-            customerId,
-            startDate,
-            endDate,
-            status: 'pending',
-            totalCost,
-            paymentMethod,
-            paymentStatus
-        }, { transaction: t });
+        const customerId = customer.id;
+                
+        // Create reservation and update car status in a transaction
+        const result = await sequelize.transaction(async (t) => {
+            const reservation = await Reservation.create({
+                carId,
+                customerId,
+                startDate,
+                endDate,
+                totalCost,
+                status: 'pending'
+            }, { transaction: t });
 
-        console.log('Created reservation:', reservation.toJSON());
+            // Update car status
+            await car.update({ status: 'rented' }, { transaction: t });
 
-        await t.commit();
-
-        res.status(201).json({
-            message: 'Reservation created successfully',
-            reservation: reservation
+            return reservation;
         });
 
+        res.status(201).json(result);
     } catch (error) {
-        await t.rollback();
         console.error('Error creating reservation:', error);
-        res.status(500).json({
-            message: 'Failed to create reservation',
-            error: error.message,
-            details: error.original ? error.original.sqlMessage : null
-        });
+        res.status(500).json({ message: 'Error creating reservation: ' + error});
     }
 });
 
@@ -194,6 +141,46 @@ router.patch('/:id/cancel', authenticateToken, async (req, res) => {
     } catch (error) {
         console.error('Error cancelling reservation:', error);
         res.status(500).json({ message: 'Failed to cancel reservation' });
+    }
+});
+
+router.delete('/:id/delete', authenticateToken, async (req, res) => {
+    try {
+        await Reservation.destroy({
+            where: {
+                id: req.params.id,
+                customerId: req.user.id
+            }
+        })
+
+        if (!reservation) {
+            return res.status(404).json({ message: 'Reservation not found' });
+        }
+
+        res.json(reservation);
+    } catch (error) {
+        console.error('Error deleting reservation:', error);
+        res.status(500).json({ message: 'Failed to delete reservation' + error});
+    }
+});
+
+router.get('/getAll' , authenticateAdmin , async (req , res) => {
+    try{
+        const reservations = await Reservation.findAll({
+            include: [
+                {
+                    model: Customer,
+                },
+                {
+                    model: Car,
+                    attributes: ['model' , 'year']
+                }
+            ]   
+        });
+        res.json(reservations);
+    }
+    catch(err){
+        res.status(500).json({ message: 'Failed to get All reservations: ' + err });
     }
 });
 

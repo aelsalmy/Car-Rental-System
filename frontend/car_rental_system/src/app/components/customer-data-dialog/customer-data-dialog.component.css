@@ -1,0 +1,7 @@
+.dialog-buttons{
+    display: flex;
+    align-content: left;
+    justify-content: left;
+    margin-bottom: 4px;
+    margin-left: 4px;
+}
