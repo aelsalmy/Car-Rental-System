@@ -10,6 +10,9 @@ import { adminGuard } from './guards/admin.guard';
 import { authGuard } from './guards/auth.guard';
 import { loginGuard } from './guards/login.guard';
 import { HomePageComponent } from './components/home-page/home-page.component';
+import { ReservationReportComponent } from './components/reservation-report/reservation-report.component';
+import { CarReservationsComponent } from './components/car-reservations/car-reservations.component';
+import { CarReportComponent } from './components/car-report/car-report.component';
 
 export const routes: Routes = [
     { 
@@ -32,10 +35,13 @@ export const routes: Routes = [
         component: AdminLayoutComponent,
         canActivate: [authGuard, adminGuard],
         children: [
-            { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+            { path: '', redirectTo: 'cars/view-all', pathMatch: 'full' },
+            { path: 'dashboard', component: HomePageComponent },
             { path: 'cars/register', component: CarRegistrationComponent },
             { path: 'cars/view-all', component: CarListingComponent },
-            { path: 'reservations', component: MyReservationsComponent }
+            { path: 'reservations', component: CarReservationsComponent },
+            { path: 'reports/reservations', component: ReservationReportComponent },
+            { path: 'reports/car-report', component: CarReportComponent }
         ]
     },
     { 
@@ -51,11 +57,6 @@ export const routes: Routes = [
     { 
         path: 'my-reservations', 
         component: MyReservationsComponent,
-        canActivate: [authGuard]
-    },
-    {
-        path: 'payment',
-        loadComponent: () => import('./components/payment/payment.component').then(m => m.PaymentComponent),
         canActivate: [authGuard]
     },
     {

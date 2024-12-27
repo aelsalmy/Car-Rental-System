@@ -1,13 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const { Car, Reservation, Office, Customer } = require('../models/carModels');
+const { Car, Reservation, Office, Customer, Payment } = require('../models/carModels');
 const { authenticateToken , authenticateAdmin} = require('../middleware/auth');
 const sequelize = require('../config/database');
-const { Op } = require('sequelize');
+const { Op, Sequelize } = require('sequelize');
 
 router.post('/', authenticateToken, async (req, res) => {           //route to insert a reservation
     try {
-        const { carId, startDate, endDate } = req.body;
+        const { carId, startDate, endDate, paymentMethod, paymentStatus, totalCost } = req.body;
         const userid = req.user.id;
 
         // Check if car exists and is available
@@ -40,28 +40,36 @@ router.post('/', authenticateToken, async (req, res) => {           //route to i
         });
 
         if (overlapping) {
-            return res.status(400).json({ message: 'Car already reserved for these dates' });
+            return res.status(400).json({ 
+                message: `This car is already reserved for these dates. Please end your reservation before ${new Date(overlapping.startDate).toLocaleDateString()}` 
+            });
         }
 
-        // Calculate total cost
-        const days = Math.ceil((new Date(endDate) - new Date(startDate)) / (1000 * 60 * 60 * 24));
-        const totalCost = days * car.dailyRate;
+        if (!customer) {
+            return res.status(404).json({ message: 'Customer profile not found' });
+        }
 
         const customerId = customer.id;
                 
-        // Create reservation and update car status in a transaction
+        // Create reservation and payment record in a transaction
         const result = await sequelize.transaction(async (t) => {
+            // Create the reservation
             const reservation = await Reservation.create({
                 carId,
                 customerId,
                 startDate,
                 endDate,
-                totalCost,
-                status: 'pending'
+                status: 'pending',
+                totalCost
             }, { transaction: t });
 
-            // Update car status
-            await car.update({ status: 'rented' }, { transaction: t });
+            // Create the payment record
+            await Payment.create({
+                reservationId: reservation.id,
+                amount: totalCost,
+                paymentMethod,
+                paymentStatus
+            }, { transaction: t });
 
             return reservation;
         });
@@ -69,7 +77,7 @@ router.post('/', authenticateToken, async (req, res) => {           //route to i
         res.status(201).json(result);
     } catch (error) {
         console.error('Error creating reservation:', error);
-        res.status(500).json({ message: 'Error creating reservation: ' + error});
+        res.status(500).json({ message: 'Error creating reservation: ' + error.message });
     }
 });
 
@@ -94,9 +102,15 @@ router.get('/my', authenticateToken, async (req, res) => {
                 {
                     model: Car,
                     include: [Office]
+                },
+                {
+                    model: Payment,
+                    attributes: ['amount', 'paymentMethod', 'paymentStatus']
                 }
-            ]
+            ],
+            order: [['createdAt', 'DESC']]
         });
+
         res.json(reservations);
     } catch (error) {
         console.error('Error fetching reservations:', error);
@@ -164,70 +178,89 @@ router.delete('/:id/delete', authenticateToken, async (req, res) => {
     }
 });
 
-router.get('/getAll' , authenticateAdmin , async (req , res) => {
-    try{
+router.get('/getAll', authenticateAdmin, async (req, res) => {
+    try {
         const reservations = await Reservation.findAll({
             include: [
                 {
-                    model: Customer,
+                    model: Car,
+                    include: [Office]
                 },
                 {
-                    model: Car,
-                    attributes: ['model' , 'year']
+                    model: Customer,
+                    attributes: ['name', 'email', 'phone', 'address']
+                },
+                {
+                    model: Payment,
+                    attributes: ['amount', 'paymentMethod', 'paymentStatus']
                 }
-            ]   
+            ],
+            order: [['createdAt', 'DESC']]
         });
         res.json(reservations);
+    } catch (error) {
+        console.error('Error fetching all reservations:', error);
+        res.status(500).json({ message: 'Failed to fetch reservations' });
     }
-    catch(err){
-        res.status(500).json({ message: 'Failed to get All reservations: ' + err });
-    }
-});
-
-router.get('/test-auth', authenticateToken, (req, res) => {
-    res.json({
-        message: 'Authentication successful',
-        user: req.user
-    });
 });
 
 // Update reservation status endpoint
-router.patch('/:id/status', authenticateToken, async (req, res) => {
+router.patch('/:id/status', authenticateAdmin, async (req, res) => {
     try {
         const { status } = req.body;
         const reservationId = req.params.id;
 
-        // Only admin can update status
-        if (!req.user.isAdmin) {
-            return res.status(403).json({ message: 'Only admins can update reservation status' });
-        }
-
         const reservation = await Reservation.findByPk(reservationId, {
-            include: [Car]
+            include: [Car, Payment]
         });
 
         if (!reservation) {
             return res.status(404).json({ message: 'Reservation not found' });
         }
 
-        // If setting to active, check payment status for cash payments
-        if (status === 'active' && reservation.paymentMethod === 'cash' && reservation.paymentStatus === 'unpaid') {
-            return res.status(400).json({ 
-                message: 'Cannot activate reservation - payment is pending for cash payment' 
-            });
-        }
+        // Get today's date at midnight for comparison
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const reservationStart = new Date(reservation.startDate);
+        reservationStart.setHours(0, 0, 0, 0);
 
         // Update reservation and car status
         await sequelize.transaction(async (t) => {
             await reservation.update({ status }, { transaction: t });
             
-            // If activating reservation, update car status
+            // If activating reservation, only update car status if today is the start date
             if (status === 'active') {
-                await reservation.Car.update({ status: 'rented' }, { transaction: t });
+                // Update payment status to paid for cash payments
+                if (reservation.Payment.paymentMethod === 'cash') {
+                    await Payment.update(
+                        { paymentStatus: 'paid' },
+                        { 
+                            where: { reservationId: reservation.id },
+                            transaction: t 
+                        }
+                    );
+                }
+
+                // Only set car to rented if today is the start date or after
+                if (today >= reservationStart) {
+                    await Car.update(
+                        { status: 'rented' },
+                        { 
+                            where: { id: reservation.carId },
+                            transaction: t 
+                        }
+                    );
+                }
             }
-            // If completing or cancelling, check if car can be set back to active
+            // If completing or cancelling, set car back to active
             else if (status === 'completed' || status === 'cancelled') {
-                await reservation.Car.update({ status: 'active' }, { transaction: t });
+                await Car.update(
+                    { status: 'active' },
+                    { 
+                        where: { id: reservation.carId },
+                        transaction: t 
+                    }
+                );
             }
         });
 
@@ -239,15 +272,10 @@ router.patch('/:id/status', authenticateToken, async (req, res) => {
 });
 
 // Add new route to handle setting car to out of service by admin
-router.patch('/car/:carId/status', authenticateToken, async (req, res) => {
+router.patch('/car/:carId/status', authenticateAdmin, async (req, res) => {
     try {
         const { carId } = req.params;
         const { status } = req.body;
-
-        // Check if user is admin (you may need to adjust this based on your auth system)
-        if (!req.user.isAdmin) {
-            return res.status(403).json({ message: 'Only admins can update car status' });
-        }
 
         // Only allow setting to out_of_service
         if (status !== 'out_of_service') {
@@ -282,6 +310,224 @@ router.patch('/car/:carId/status', authenticateToken, async (req, res) => {
     } catch (error) {
         console.error('Error updating car status:', error);
         res.status(500).json({ message: 'Error updating car status' });
+    }
+});
+
+// Search reservations endpoint
+router.get('/search', authenticateAdmin, async (req, res) => {
+    try {
+        const { startDate, endDate, status, currentlyRented } = req.query;
+        
+        // Build where clause
+        const whereClause = {};
+        
+        if (currentlyRented === 'true') {
+            const currentDate = new Date().toISOString().split('T')[0];
+            
+            // First, find all cars that are currently rented
+            const currentlyRentedCars = await Reservation.findAll({
+                where: {
+                    startDate: { [Op.lte]: currentDate },
+                    endDate: { [Op.gte]: currentDate },
+                    status: 'active'
+                },
+                attributes: ['carId'],
+                raw: true
+            });
+            
+            // Get all car IDs (including duplicates)
+            const carIds = currentlyRentedCars.map(r => r.carId);
+            
+            // Now get all reservations for these cars
+            whereClause.carId = { [Op.in]: carIds };
+        } else {
+            // Regular search filters
+            if (startDate && endDate) {
+                whereClause.startDate = startDate;
+                whereClause.endDate = endDate;
+            } else if (startDate) {
+                whereClause.startDate = startDate;
+            } else if (endDate) {
+                whereClause.endDate = endDate;
+            }
+            
+            if (status) {
+                whereClause.status = status;
+            }
+        }
+
+        const reservations = await Reservation.findAll({
+            where: whereClause,
+            include: [
+                {
+                    model: Car,
+                    include: [Office]
+                },
+                {
+                    model: Customer,
+                    attributes: ['name', 'email', 'phone', 'address']
+                },
+                {
+                    model: Payment,
+                    attributes: ['amount', 'paymentMethod', 'paymentStatus']
+                }
+            ],
+            order: [['startDate', 'DESC']]
+        });
+
+        res.json(reservations);
+    } catch (error) {
+        console.error('Error searching reservations:', error);
+        res.status(500).json({ message: 'Failed to search reservations' });
+    }
+});
+
+// Get detailed reservation report
+router.get('/report', authenticateAdmin, async (req, res) => {
+    try {
+        const { startDate, endDate } = req.query;
+        
+        const whereClause = {};
+        const conditions = [];
+
+        // Handle start date filtering
+        if (startDate) {
+            const start = new Date(startDate);
+            const startDateStr = start.toISOString().split('T')[0];
+            conditions.push(
+                Sequelize.where(
+                    Sequelize.fn('DATE', Sequelize.col('startDate')),
+                    '=',
+                    startDateStr
+                )
+            );
+        }
+
+        // Handle end date filtering
+        if (endDate) {
+            const end = new Date(endDate);
+            const endDateStr = end.toISOString().split('T')[0];
+            conditions.push(
+                Sequelize.where(
+                    Sequelize.fn('DATE', Sequelize.col('endDate')),
+                    '=',
+                    endDateStr
+                )
+            );
+        }
+
+        // Only add conditions if we have any
+        if (conditions.length > 0) {
+            whereClause[Op.and] = conditions;
+        }
+
+        const reservations = await Reservation.findAll({
+            where: whereClause,
+            include: [
+                {
+                    model: Car,
+                    include: [
+                        {
+                            model: Office,
+                            attributes: ['id', 'name', 'location', 'phone']
+                        }
+                    ],
+                    attributes: ['id', 'model', 'year', 'plateId', 'status', 'dailyRate', 'category', 'transmission', 'fuelType']
+                },
+                {
+                    model: Customer,
+                    attributes: ['id', 'name', 'email', 'phone', 'address']
+                },
+                {
+                    model: Payment,
+                    attributes: ['id', 'amount', 'paymentMethod', 'paymentStatus']
+                }
+            ],
+            attributes: ['id', 'carId', 'customerId', 'startDate', 'endDate', 'status', 'createdAt', 'updatedAt'],
+            order: [['startDate', 'DESC']]
+        });
+
+        res.json(reservations);
+    } catch (error) {
+        console.error('Error generating reservation report:', error);
+        res.status(500).json({ message: 'Failed to generate report', error: error.message });
+    }
+});
+
+// Get car reservation report
+router.get('/car-report', authenticateAdmin, async (req, res) => {
+    try {
+        const { carId, startDate, endDate } = req.query;
+        
+        const whereClause = {};
+        const conditions = [];
+
+        // Always filter by car ID
+        if (carId) {
+            conditions.push({ carId: carId });
+        }
+
+        // Handle start date filtering
+        if (startDate) {
+            const start = new Date(startDate);
+            const startDateStr = start.toISOString().split('T')[0];
+            conditions.push(
+                Sequelize.where(
+                    Sequelize.fn('DATE', Sequelize.col('startDate')),
+                    '=',
+                    startDateStr
+                )
+            );
+        }
+
+        // Handle end date filtering
+        if (endDate) {
+            const end = new Date(endDate);
+            const endDateStr = end.toISOString().split('T')[0];
+            conditions.push(
+                Sequelize.where(
+                    Sequelize.fn('DATE', Sequelize.col('endDate')),
+                    '=',
+                    endDateStr
+                )
+            );
+        }
+
+        // Only add conditions if we have any
+        if (conditions.length > 0) {
+            whereClause[Op.and] = conditions;
+        }
+
+        const reservations = await Reservation.findAll({
+            where: whereClause,
+            include: [
+                {
+                    model: Car,
+                    include: [
+                        {
+                            model: Office,
+                            attributes: ['id', 'name', 'location', 'phone']
+                        }
+                    ],
+                    attributes: ['id', 'model', 'year', 'plateId', 'status', 'dailyRate', 'category', 'transmission', 'fuelType']
+                },
+                {
+                    model: Customer,
+                    attributes: ['id', 'name', 'email', 'phone', 'address']
+                },
+                {
+                    model: Payment,
+                    attributes: ['id', 'amount', 'paymentMethod', 'paymentStatus']
+                }
+            ],
+            attributes: ['id', 'carId', 'customerId', 'startDate', 'endDate', 'status', 'createdAt', 'updatedAt'],
+            order: [['startDate', 'DESC']]
+        });
+
+        res.json(reservations);
+    } catch (error) {
+        console.error('Error generating car reservation report:', error);
+        res.status(500).json({ message: 'Failed to generate report', error: error.message });
     }
 });
 

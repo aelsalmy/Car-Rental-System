@@ -46,8 +46,8 @@ const authenticateAdmin = (req, res, next) => {
             return res.status(403).json({ message: 'Invalid or expired token' });
         }
 
-        if(user.role == "user"){
-            return res.status(401).json({ message: 'Access Denied' });
+        if(user.role !== "admin"){
+            return res.status(403).json({ message: 'Access denied. Admin privileges required.' });
         }
         else{
             console.log('Decoded user:', user);

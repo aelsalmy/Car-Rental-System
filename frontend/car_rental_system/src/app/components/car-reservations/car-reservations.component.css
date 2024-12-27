@@ -1,33 +1,85 @@
-.buttons-section{
-    display: flex;
-    justify-content: space-between;
+mat-card {
+    margin: 16px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .status-badge {
     padding: 4px 8px;
     border-radius: 4px;
     font-size: 12px;
-    margin-left: 8px;
+    font-weight: bold;
+    text-transform: uppercase;
 }
 
 .status-badge.pending {
-    background-color: rgb(217, 192, 69);
-    color: white;
+    background-color: #ffd700;
+    color: #000;
+}
+
+.status-badge.active {
+    background-color: #4caf50;
+    color: #fff;
+}
+
+.status-badge.completed {
+    background-color: #2196f3;
+    color: #fff;
 }
 
 .status-badge.cancelled {
     background-color: #f44336;
-    color: white;
+    color: #fff;
 }
 
-.status-badge.completed {
-    background-color: #117420;
-    color: white;
+.status-badge.rented {
+    background-color: #d4edda;
+    color: #155724;
 }
 
-.status-badge.active {
-    background-color: #4bbb5c;
-    color: white;
+.reservation-details {
+    padding: 16px;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+    margin: 8px 0;
+    margin: 16px 0;
+}
+
+.reservation-details p {
+    margin: 8px 0;
+}
+
+.buttons-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 16px;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.cost {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+mat-card-title {
+    font-size: 20px;
+    margin-bottom: 8px;
+}
+
+mat-card-subtitle {
+    font-size: 14px;
+    margin-bottom: 4px;
+}
+
+button mat-icon {
+    margin-right: 4px;
 }
 
 .hamburger-btn {
@@ -38,8 +90,38 @@
     margin-left: 8px;
 }
 
-.cost{
-    font-size: 18px;
-    margin-left: 8px;
-    font-weight: bold;
+.search-container {
+    padding: 20px;
+}
+
+.form-row {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.form-row mat-form-field {
+    flex: 1;
+}
+
+.checkbox-row {
+    margin-bottom: 20px;
+}
+
+.checkbox-row mat-checkbox {
+    font-size: 16px;
+}
+
+.button-row {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.results-container {
+    margin-top: 20px;
+}
+
+.mat-form-field.mat-form-field-disabled {
+    opacity: 0.6;
 }

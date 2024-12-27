@@ -22,16 +22,16 @@ app.use('/api/cars', carRoutes)
 app.use('/api/offices', officeRoutes)
 app.use('/api/reservations', reservationRoutes)
 
-
 console.log('JWT_SECRET loaded:', !!process.env.JWT_SECRET);
 
+// Sync database without dropping tables
 sequelize.sync({ alter: true, logging: false })
     .then(() => {
-        console.log('Database Synced Successfully')
+        console.log('Database synchronized successfully')
         app.listen(process.env.PORT, () => {
             console.log('Server Listening to port: ' + process.env.PORT)
         })
     })
     .catch((err) => {
-        console.log('Error: Database Syncing Failed ' + err)
+        console.error('Error during database synchronization:', err)
     });

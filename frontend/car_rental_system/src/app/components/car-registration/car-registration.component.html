@@ -5,52 +5,119 @@
         </mat-card-header>
         <mat-card-content>
             <form [formGroup]="carForm" (ngSubmit)="onSubmit()">
-                <mat-form-field>
-                    <mat-label>Model</mat-label>
-                    <input matInput formControlName="model">
-                </mat-form-field>
+                <!-- Basic Information -->
+                <div class="form-section">
+                    <h3>Basic Information</h3>
+                    <mat-form-field>
+                        <mat-label>Model</mat-label>
+                        <input matInput formControlName="model" placeholder="e.g., Toyota Camry">
+                    </mat-form-field>
 
-                <mat-form-field>
-                    <mat-label>Year</mat-label>
-                    <input matInput type="number" formControlName="year">
-                </mat-form-field>
+                    <mat-form-field>
+                        <mat-label>Year</mat-label>
+                        <input matInput type="number" formControlName="year" placeholder="e.g., 2024">
+                    </mat-form-field>
 
-                <mat-form-field>
-                    <mat-label>Plate ID</mat-label>
-                    <input matInput formControlName="plateId">
-                </mat-form-field>
+                    <mat-form-field>
+                        <mat-label>Plate ID</mat-label>
+                        <input matInput formControlName="plateId" placeholder="e.g., ABC-123">
+                    </mat-form-field>
+                </div>
 
-                <mat-form-field>
-                    <mat-label>Status</mat-label>
-                    <mat-select formControlName="status">
-                        <mat-option value="active">Active</mat-option>
-                        <mat-option value="out_of_service">Out of Service</mat-option>
-                        <mat-option value="rented">Rented</mat-option>
-                    </mat-select>
-                </mat-form-field>
+                <!-- Specifications -->
+                <div class="form-section">
+                    <h3>Specifications</h3>
+                    <mat-form-field>
+                        <mat-label>Category</mat-label>
+                        <mat-select formControlName="category">
+                            <mat-option *ngFor="let category of categories" [value]="category">
+                                {{category | titlecase}}
+                            </mat-option>
+                        </mat-select>
+                    </mat-form-field>
 
-                <mat-form-field>
-                    <mat-label>Office</mat-label>
-                    <mat-select formControlName="officeId">
-                        <mat-option *ngFor="let office of offices" [value]="office.id">
-                            {{office.name}} - {{office.location}}
-                        </mat-option>
-                    </mat-select>
-                </mat-form-field>
+                    <mat-form-field>
+                        <mat-label>Transmission</mat-label>
+                        <mat-select formControlName="transmission">
+                            <mat-option *ngFor="let type of transmissionTypes" [value]="type">
+                                {{type | titlecase}}
+                            </mat-option>
+                        </mat-select>
+                    </mat-form-field>
 
-                <mat-form-field>
-                    <mat-label>Daily Rate</mat-label>
-                    <input matInput type="number" formControlName="dailyRate">
-                </mat-form-field>
+                    <mat-form-field>
+                        <mat-label>Fuel Type</mat-label>
+                        <mat-select formControlName="fuelType">
+                            <mat-option *ngFor="let type of fuelTypes" [value]="type">
+                                {{type | titlecase}}
+                            </mat-option>
+                        </mat-select>
+                    </mat-form-field>
 
-                <mat-form-field>
-                    <mat-label>Specifications</mat-label>
-                    <textarea matInput formControlName="specifications"></textarea>
-                </mat-form-field>
+                    <mat-form-field>
+                        <mat-label>Seating Capacity</mat-label>
+                        <input matInput type="number" formControlName="seatingCapacity" 
+                               placeholder="Number of seats (2-15)" min="2" max="15">
+                        <mat-hint>Enter a number between 2 and 15</mat-hint>
+                    </mat-form-field>
+                </div>
 
-                <button mat-raised-button color="primary" type="submit" [disabled]="!carForm.valid">
-                    Register Car
-                </button>
+                <!-- Features -->
+                <div class="form-section">
+                    <h3>Features</h3>
+                    <div class="features-grid">
+                        <mat-checkbox *ngFor="let feature of features" 
+                                    [checked]="isFeatureSelected(feature)"
+                                    (change)="toggleFeature(feature)">
+                            {{feature}}
+                        </mat-checkbox>
+                    </div>
+                </div>
+
+                <!-- Administrative -->
+                <div class="form-section">
+                    <h3>Administrative</h3>
+                    <mat-form-field>
+                        <mat-label>Status</mat-label>
+                        <mat-select formControlName="status">
+                            <mat-option value="active">Active</mat-option>
+                            <mat-option value="out_of_service">Out of Service</mat-option>
+                            <mat-option value="rented">Rented</mat-option>
+                        </mat-select>
+                    </mat-form-field>
+
+                    <mat-form-field>
+                        <mat-label>Office</mat-label>
+                        <mat-select formControlName="officeId">
+                            <mat-option *ngFor="let office of offices" [value]="office.id">
+                                {{office.name}} - {{office.location}}
+                            </mat-option>
+                        </mat-select>
+                    </mat-form-field>
+
+                    <mat-form-field>
+                        <mat-label>Daily Rate</mat-label>
+                        <input matInput type="number" formControlName="dailyRate" placeholder="Daily rental rate">
+                        <span matTextSuffix>$</span>
+                    </mat-form-field>
+                </div>
+
+                <!-- Description -->
+                <div class="form-section">
+                    <h3>Additional Information</h3>
+                    <mat-form-field>
+                        <mat-label>Description</mat-label>
+                        <textarea matInput formControlName="description" 
+                                placeholder="Additional details about the car"
+                                rows="4"></textarea>
+                    </mat-form-field>
+                </div>
+
+                <div class="form-actions">
+                    <button mat-raised-button color="primary" type="submit" [disabled]="!carForm.valid">
+                        Register Car
+                    </button>
+                </div>
             </form>
         </mat-card-content>
     </mat-card>

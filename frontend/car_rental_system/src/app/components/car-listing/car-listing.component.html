@@ -1,42 +1,124 @@
 <div class="car-listing-container">
-    <div class="filters">
-        <mat-form-field>
-            <mat-label>Filter by Status</mat-label>
-            <mat-select [(value)]="statusFilter" (selectionChange)="applyFilters()">
-                <mat-option value="all">All Cars</mat-option>
-                <mat-option value="active">Active</mat-option>
-                <mat-option value="rented">Rented</mat-option>
-                <mat-option value="out_of_service">Out of Service</mat-option>
-            </mat-select>
+    <!-- Search Section -->
+    <div class="search-section" *ngIf="!(authService.isAdmin$ | async) || isSearchView">
+        <mat-form-field class="search-field">
+            <mat-label>Search cars</mat-label>
+            <input matInput [(ngModel)]="searchTerm" (ngModelChange)="applyFilters()" placeholder="Search by model, specifications...">
+            <button mat-icon-button matSuffix (click)="applyFilters()">
+                <mat-icon>search</mat-icon>
+            </button>
         </mat-form-field>
 
-        <mat-form-field>
-            <mat-label>Filter by Office</mat-label>
-            <mat-select [(value)]="officeFilter" (selectionChange)="applyFilters()">
-                <mat-option value="all">All Offices</mat-option>
-                <mat-option *ngFor="let office of offices" [value]="office.id">
-                    {{office.name}}
-                </mat-option>
-            </mat-select>
-        </mat-form-field>
+        <div class="advanced-search-toggle">
+            <button mat-button type="button" (click)="toggleAdvancedSearch()">
+                {{ showAdvancedSearch ? 'Hide Advanced Search' : 'Show Advanced Search' }}
+                <mat-icon>{{ showAdvancedSearch ? 'expand_less' : 'expand_more' }}</mat-icon>
+            </button>
+        </div>
+
+        <mat-expansion-panel [expanded]="showAdvancedSearch" class="advanced-search-panel">
+            <div class="advanced-search-container">
+                <!-- Categories -->
+                <mat-form-field>
+                    <mat-label>Category</mat-label>
+                    <mat-select [(ngModel)]="selectedCategory" (selectionChange)="applyFilters()">
+                        <mat-option *ngFor="let cat of categories" [value]="cat.value">
+                            {{cat.label}}
+                        </mat-option>
+                    </mat-select>
+                </mat-form-field>
+
+                <!-- Transmission -->
+                <mat-form-field>
+                    <mat-label>Transmission</mat-label>
+                    <mat-select [(ngModel)]="selectedTransmission" (selectionChange)="applyFilters()">
+                        <mat-option *ngFor="let trans of transmissions" [value]="trans.value">
+                            {{trans.label}}
+                        </mat-option>
+                    </mat-select>
+                </mat-form-field>
+
+                <!-- Fuel Type -->
+                <mat-form-field>
+                    <mat-label>Fuel Type</mat-label>
+                    <mat-select [(ngModel)]="selectedFuelType" (selectionChange)="applyFilters()">
+                        <mat-option *ngFor="let fuel of fuelTypes" [value]="fuel.value">
+                            {{fuel.label}}
+                        </mat-option>
+                    </mat-select>
+                </mat-form-field>
+
+                <!-- Status Filter (only for admin) -->
+                <mat-form-field *ngIf="authService.isAdmin$ | async">
+                    <mat-label>Filter by Status</mat-label>
+                    <mat-select [(value)]="statusFilter" (selectionChange)="applyFilters()">
+                        <mat-option value="all">All Cars</mat-option>
+                        <mat-option value="active">Active</mat-option>
+                        <mat-option value="rented">Rented</mat-option>
+                        <mat-option value="out_of_service">Out of Service</mat-option>
+                    </mat-select>
+                </mat-form-field>
+
+                <!-- Office Filter -->
+                <mat-form-field>
+                    <mat-label>Filter by Office</mat-label>
+                    <mat-select [(value)]="officeFilter" (selectionChange)="applyFilters()">
+                        <mat-option value="all">All Offices</mat-option>
+                        <mat-option *ngFor="let office of offices" [value]="office.id">
+                            {{office.name}}
+                        </mat-option>
+                    </mat-select>
+                </mat-form-field>
+
+                <!-- Features -->
+                <div class="features-container">
+                    <label>Features:</label>
+                    <mat-chip-listbox multiple>
+                        <mat-chip-option
+                            *ngFor="let feature of availableFeatures"
+                            [selected]="selectedFeatures.includes(feature)"
+                            (click)="toggleFeature(feature)">
+                            {{feature}}
+                        </mat-chip-option>
+                    </mat-chip-listbox>
+                </div>
+
+                <div class="buttons-container">
+                    <button mat-button type="button" (click)="resetFilters()">Reset All Filters</button>
+                </div>
+            </div>
+        </mat-expansion-panel>
     </div>
 
+    <!-- Car Grid -->
     <mat-grid-list cols="4" rowHeight="1:1" gutterSize="16px">
-        <mat-grid-tile *ngFor="let car of filteredCars" >
-            <mat-card  class="car-card">
+        <mat-grid-tile *ngFor="let car of filteredCars">
+            <mat-card class="car-card">
                 <mat-card-header>
                     <mat-card-title>{{car.model}} ({{car.year}})</mat-card-title>
                     <mat-card-subtitle>
                         Plate: {{car.plateId}}
                         <span [class]="'status-badge ' + car.status">{{car.status}}</span>
                     </mat-card-subtitle>
-                </mat-card-header>                <mat-card-content>
-                    <p>Daily Rate: ${{car.dailyRate}}</p>
-                    <p>Office: {{car.Office.name}} - {{car.Office.location}}</p>
-                    <p>Specifications: {{car.specifications}}</p>
+                </mat-card-header>
+                <mat-card-content>
+                    <p><strong>Daily Rate:</strong> ${{car.dailyRate}}</p>
+                    <p><strong>Office:</strong> {{car.Office.name}} - {{car.Office.location}}</p>
+                    <p *ngIf="car.category"><strong>Category:</strong> {{car.category | titlecase}}</p>
+                    <p *ngIf="car.transmission"><strong>Transmission:</strong> {{car.transmission | titlecase}}</p>
+                    <p *ngIf="car.fuelType"><strong>Fuel Type:</strong> {{car.fuelType | titlecase}}</p>
+                    <p *ngIf="car.specifications"><strong>Specifications:</strong> {{car.specifications}}</p>
+                    <div *ngIf="car.features?.length" class="features-list">
+                        <strong>Features:</strong>
+                        <mat-chip-listbox>
+                            <mat-chip-option *ngFor="let feature of car.features" disabled>
+                                {{feature}}
+                            </mat-chip-option>
+                        </mat-chip-listbox>
+                    </div>
                 </mat-card-content>
                 <mat-card-actions>
-                    <div class = "card-buttons">
+                    <div class="card-buttons">
                         <button mat-raised-button color="primary" *ngIf="car.status === 'active'" (click)="reserveCar(car.id)">
                             Reserve Now
                         </button>

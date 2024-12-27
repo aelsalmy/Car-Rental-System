@@ -1,18 +1,17 @@
 import { Component, EventEmitter, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { MatIconModule } from '@angular/material/icon';
 
 @Component({
   selector: 'app-admin-sidebar',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, MatIconModule],
   templateUrl: './admin-sidebar.component.html',
   styleUrls: ['./admin-sidebar.component.css']
 })
 export class AdminSidebarComponent {
-
   @Output() changeView = new EventEmitter<string>();
-
+  
   isOpen = false;
   
   menuItems = [
@@ -21,29 +20,26 @@ export class AdminSidebarComponent {
       icon: 'directions_car',
       children: [
         { title: 'Register New Car', page: 'RegisterCar' },
-        { title: 'Update Car Status', page: 'CarList' },
         { title: 'View All Cars', page: 'CarList' },
-        { title: 'View Car Reservations' , page: 'CarReservations'}
+        { title: 'View Car Reservations', page: 'CarReservations' }
       ]
     },
     {
       title: 'Reports',
       icon: 'assessment',
       children: [
-        { title: 'Period Reservations', page: 'CarList' },
-        { title: 'Car Reservations', page: 'CarList' },
-        { title: 'Car Status Report', page: 'CarList' },
-        { title: 'Customer Reservations', page: 'CarList' },
-        { title: 'Payment Reports', page: 'CarList' }
+        { title: 'Period Reservations', page: 'ReservationReport' },
+        { title: 'Car Reservations', page: 'CarReport' },
+        { title: 'Car Status Report', page: 'CarStatusReport' },
+        { title: 'Customer Reservations', page: 'CustomerReport' },
+        { title: 'Payment Reports', page: 'PaymentReport' }
       ]
     },
     {
-      title: 'Advanced Search',
-      icon: 'search',
+      title: 'Customer Search',
+      icon: 'person_search',
       children: [
-        { title: 'Search Cars', page: 'CarList' },
-        { title: 'Search Customers', page: 'CarList' },
-        { title: 'Search Reservations', page: 'CarList' }
+        { title: 'Search Customers', page: 'CustomerSearch' }
       ]
     }
   ];
@@ -52,8 +48,9 @@ export class AdminSidebarComponent {
     this.isOpen = !this.isOpen;
   }
 
-  onChangeView(newView: string){
-    this.toggleSidebar()
-    this.changeView.emit(newView)
+  onChangeView(page: string) {
+    console.log('Changing view to:', page);
+    this.changeView.emit(page);
+    this.isOpen = false;
   }
 }
