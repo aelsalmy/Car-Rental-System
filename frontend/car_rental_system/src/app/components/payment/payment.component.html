@@ -1,0 +1,50 @@
+<div class="payment-container">
+    <mat-card>
+        <mat-card-header>
+            <mat-card-title>Payment for Reservation</mat-card-title>
+            <mat-card-subtitle>Total Amount: ${{totalAmount}}</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+            <div class="payment-options" *ngIf="!showCreditCardForm">
+                <button mat-raised-button color="primary" (click)="processCashPayment()">
+                    Pay with Cash on Arrival
+                </button>
+                <button mat-raised-button color="accent" (click)="showCreditCardForm = true">
+                    Pay with Credit Card
+                </button>
+            </div>
+
+            <form [formGroup]="creditCardForm" *ngIf="showCreditCardForm" (ngSubmit)="processCreditCardPayment()">
+                <mat-form-field appearance="outline">
+                    <mat-label>Card Number</mat-label>
+                    <input matInput formControlName="cardNumber" placeholder="1234 5678 9012 3456">
+                    <mat-error *ngIf="creditCardForm.get('cardNumber')?.errors?.['required']">Card number is required</mat-error>
+                    <mat-error *ngIf="creditCardForm.get('cardNumber')?.errors?.['pattern']">Invalid card number format</mat-error>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                    <mat-label>Expiry Date</mat-label>
+                    <input matInput formControlName="expiryDate" placeholder="MM/YY">
+                    <mat-error *ngIf="creditCardForm.get('expiryDate')?.errors?.['required']">Expiry date is required</mat-error>
+                    <mat-error *ngIf="creditCardForm.get('expiryDate')?.errors?.['pattern']">Invalid expiry date format (MM/YY)</mat-error>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                    <mat-label>CVV</mat-label>
+                    <input matInput formControlName="cvv" type="password">
+                    <mat-error *ngIf="creditCardForm.get('cvv')?.errors?.['required']">CVV is required</mat-error>
+                    <mat-error *ngIf="creditCardForm.get('cvv')?.errors?.['pattern']">Invalid CVV format</mat-error>
+                </mat-form-field>
+
+                <div class="button-container">
+                    <button mat-raised-button color="primary" type="submit" [disabled]="!creditCardForm.valid">
+                        Process Payment
+                    </button>
+                    <button mat-button type="button" (click)="showCreditCardForm = false">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </mat-card-content>
+    </mat-card>
+</div>

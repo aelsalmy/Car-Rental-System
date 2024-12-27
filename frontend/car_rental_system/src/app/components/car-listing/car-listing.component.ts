@@ -100,7 +100,12 @@ export class CarListingComponent implements OnInit {
     }
 
     reserveCar(carId: number) {
-        this.router.navigate(['/reservation', carId]);
+        // Navigate to the reservation component
+        this.router.navigate(['/reservation'], {
+            queryParams: {
+                carId: carId
+            }
+        });
     }
 
     updateStatus(carId: number, status: string) {

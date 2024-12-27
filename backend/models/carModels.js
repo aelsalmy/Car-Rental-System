@@ -33,10 +33,57 @@ const Reservation = sequelize.define('Reservation', {
     id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
     carId: { type: DataTypes.INTEGER, allowNull: false },
     customerId: { type: DataTypes.INTEGER, allowNull: false },
-    startDate: { type: DataTypes.DATE, allowNull: false },
-    endDate: { type: DataTypes.DATE, allowNull: false },
-    status: { type: DataTypes.ENUM('pending', 'active', 'completed', 'cancelled'), defaultValue: 'pending' },
+    startDate: { 
+        type: DataTypes.DATE, 
+        allowNull: false,
+        validate: {
+            isNotPast(value) {
+                if (new Date(value) < new Date()) {
+                    throw new Error('Cannot make reservations for past dates');
+                }
+            }
+        }
+    },
+    endDate: { 
+        type: DataTypes.DATE, 
+        allowNull: false,
+        validate: {
+            isAfterStartDate(value) {
+                if (new Date(value) <= new Date(this.startDate)) {
+                    throw new Error('End date must be after start date');
+                }
+            }
+        }
+    },
+    status: { 
+        type: DataTypes.ENUM('pending', 'active', 'completed', 'cancelled'), 
+        defaultValue: 'pending'
+    },
+    paymentStatus: {
+        type: DataTypes.ENUM('unpaid', 'paid'),
+        defaultValue: 'unpaid'
+    },
+    paymentMethod: {
+        type: DataTypes.ENUM('cash', 'credit_card'),
+        allowNull: true
+    },
     totalCost: { type: DataTypes.DECIMAL(10, 2) }
+}, {
+    hooks: {
+        beforeCreate: async (reservation) => {
+            if (new Date(reservation.startDate) < new Date()) {
+                throw new Error('Cannot create reservations in the past');
+            }
+        },
+        beforeUpdate: async (reservation) => {
+            if (reservation.changed('status') && reservation.status === 'active') {
+                const car = await Car.findByPk(reservation.carId);
+                if (car && car.status !== 'active') {
+                    throw new Error('Cannot activate reservation - car is not available');
+                }
+            }
+        }
+    }
 });
 
 const Payment = sequelize.define('Payment', {
@@ -53,8 +100,13 @@ Office.hasMany(Car, { foreignKey: 'officeId' });
 Car.hasMany(Reservation, { foreignKey: 'carId' });
 Reservation.belongsTo(Car, { foreignKey: 'carId' });
 
+Customer.hasMany(Reservation, { foreignKey: 'customerId' });
 Reservation.belongsTo(Customer, { foreignKey: 'customerId' });
 
+Customer.belongsTo(User, { foreignKey: 'userId' });
+User.hasOne(Customer, { foreignKey: 'userId' });
+
+Reservation.hasOne(Payment, { foreignKey: 'reservationId' });
 Payment.belongsTo(Reservation, { foreignKey: 'reservationId' });
 
 module.exports = {
@@ -63,4 +115,4 @@ module.exports = {
     Office,
     Reservation,
     Payment
-}; 
+};

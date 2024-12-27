@@ -44,13 +44,18 @@ export const routes: Routes = [
         canActivate: [authGuard]
     },
     { 
-        path: 'reservation/:id', 
+        path: 'reservation', 
         component: ReservationComponent,
         canActivate: [authGuard]
     },
     { 
         path: 'my-reservations', 
         component: MyReservationsComponent,
+        canActivate: [authGuard]
+    },
+    {
+        path: 'payment',
+        loadComponent: () => import('./components/payment/payment.component').then(m => m.PaymentComponent),
         canActivate: [authGuard]
     },
     {

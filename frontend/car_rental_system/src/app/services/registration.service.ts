@@ -10,7 +10,25 @@ export class RegistrationService {
 
   constructor(private http: HttpClient) { }
 
-  register(username: string, password: string): Observable<any> {
-    return this.http.post<any>(this.registerUrl, { username, password });
+  register(
+    username: string, 
+    password: string, 
+    name: string, 
+    email: string, 
+    phone: string, 
+    address: string
+  ): Observable<any> {
+    const registrationData = {
+      username,
+      password,
+      customerInfo: {
+        name,
+        email,
+        phone,
+        address
+      }
+    };
+    console.log('Sending registration data:', registrationData);
+    return this.http.post<any>(this.registerUrl, registrationData);
   }
 }

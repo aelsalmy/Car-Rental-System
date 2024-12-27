@@ -42,11 +42,9 @@
                             Reserve Now
                         </button>
                         <button mat-raised-button color="warn" *ngIf="authService.isAdmin$ | async" [matMenuTriggerFor]="statusMenu">
-                            Change Status
+                            Set Out of Service
                         </button>
                         <mat-menu #statusMenu="matMenu">
-                            <button mat-menu-item (click)="updateStatus(car.id, 'active')" *ngIf="car.status !== 'active'">Set
-                                Active</button>
                             <button mat-menu-item (click)="updateStatus(car.id, 'out_of_service')"
                                 *ngIf="car.status !== 'out_of_service'">Set Out of Service</button>
                         </mat-menu>
