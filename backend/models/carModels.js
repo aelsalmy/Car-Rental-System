@@ -53,6 +53,8 @@ Office.hasMany(Car, { foreignKey: 'officeId' });
 Car.hasMany(Reservation, { foreignKey: 'carId' });
 Reservation.belongsTo(Car, { foreignKey: 'carId' });
 
+User.belongsTo(Customer , {foreignKey: 'userId'})
+
 Reservation.belongsTo(Customer, { foreignKey: 'customerId' });
 
 Payment.belongsTo(Reservation, { foreignKey: 'reservationId' });

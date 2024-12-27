@@ -8,7 +8,7 @@ const { Op } = require('sequelize');
 router.post('/', authenticateToken, async (req, res) => {           //route to insert a reservation
     try {
         const { carId, startDate, endDate } = req.body;
-        const customerId = req.user.id;
+        const userid = req.user.id;
 
         // Check if car exists and is available
         const car = await Car.findOne({
@@ -35,6 +35,10 @@ router.post('/', authenticateToken, async (req, res) => {           //route to i
             }
         });
 
+        const customer = await Customer.findOne({
+            where: { userId: userid }
+        });
+
         if (overlapping) {
             return res.status(400).json({ message: 'Car already reserved for these dates' });
         }
@@ -43,6 +47,8 @@ router.post('/', authenticateToken, async (req, res) => {           //route to i
         const days = Math.ceil((new Date(endDate) - new Date(startDate)) / (1000 * 60 * 60 * 24));
         const totalCost = days * car.dailyRate;
 
+        const customerId = customer.id;
+                
         // Create reservation and update car status in a transaction
         const result = await sequelize.transaction(async (t) => {
             const reservation = await Reservation.create({
@@ -63,7 +69,7 @@ router.post('/', authenticateToken, async (req, res) => {           //route to i
         res.status(201).json(result);
     } catch (error) {
         console.error('Error creating reservation:', error);
-        res.status(500).json({ message: 'Error creating reservation' });
+        res.status(500).json({ message: 'Error creating reservation: ' + error});
     }
 });
 
@@ -109,6 +115,26 @@ router.patch('/:id/cancel', authenticateToken, async (req, res) => {
     } catch (error) {
         console.error('Error cancelling reservation:', error);
         res.status(500).json({ message: 'Failed to cancel reservation' });
+    }
+});
+
+router.delete('/:id/delete', authenticateToken, async (req, res) => {
+    try {
+        await Reservation.destroy({
+            where: {
+                id: req.params.id,
+                customerId: req.user.id
+            }
+        })
+
+        if (!reservation) {
+            return res.status(404).json({ message: 'Reservation not found' });
+        }
+
+        res.json(reservation);
+    } catch (error) {
+        console.error('Error deleting reservation:', error);
+        res.status(500).json({ message: 'Failed to delete reservation' + error});
     }
 });
 

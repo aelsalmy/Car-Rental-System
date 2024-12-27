@@ -1,6 +1,6 @@
 .buttons-section{
     display: flex;
-    justify-content: flex-end;
+    justify-content: space-between;
 }
 
 .status-badge {
@@ -28,4 +28,18 @@
 .status-badge.active {
     background-color: #4bbb5c;
     color: white;
+}
+
+.hamburger-btn {
+    color:#f44336;
+    display: flex;
+    text-align: center;
+    justify-content: center;
+    margin-left: 8px;
+}
+
+.cost{
+    font-size: 18px;
+    margin-left: 8px;
+    font-weight: bold;
 }

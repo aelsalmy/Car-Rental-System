@@ -42,7 +42,7 @@ loginRoutes.post('/register', async (req, res) => {
             phone: phone,
             address: address,
             userId: newUser.id
-        })
+        });
 
         res.status(201).json({ message: 'User registered successfully' });
     } catch (error){
@@ -52,7 +52,7 @@ loginRoutes.post('/register', async (req, res) => {
                 message: 'Username already exists'
             });
         }
-        res.status(500).json({ message: 'Registration failed' });
+        res.status(500).json({ message: 'Registration failed: ' + error });
     }
 });
 

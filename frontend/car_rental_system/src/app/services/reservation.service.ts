@@ -39,6 +39,10 @@ export class ReservationService {
         return this.http.patch(`${this.baseUrl}/reservations/${reservationId}/cancel`, {});
     }
 
+    deleteReservation(reservationId: number): Observable<any> {
+        return this.http.delete(`${this.baseUrl}/reservations/${reservationId}/delete`, {});
+    }
+
     updateCarStatus(carId: number, status: string): Observable<any> {
         return this.http.patch(`${this.baseUrl}/cars/${carId}/status`, { status });
     }
