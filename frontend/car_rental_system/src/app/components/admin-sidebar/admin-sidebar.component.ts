@@ -22,7 +22,8 @@ export class AdminSidebarComponent {
       children: [
         { title: 'Register New Car', page: 'RegisterCar' },
         { title: 'Update Car Status', page: 'CarList' },
-        { title: 'View All Cars', page: 'CarList' }
+        { title: 'View All Cars', page: 'CarList' },
+        { title: 'View Car Reservations' , page: 'CarReservations'}
       ]
     },
     {

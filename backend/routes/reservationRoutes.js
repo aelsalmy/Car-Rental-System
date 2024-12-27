@@ -1,11 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const { Car, Reservation, Office } = require('../models/carModels');
-const { authenticateToken } = require('../middleware/auth');
+const { Car, Reservation, Office, Customer } = require('../models/carModels');
+const { authenticateToken , authenticateAdmin} = require('../middleware/auth');
 const sequelize = require('../config/database');
 const { Op } = require('sequelize');
 
-router.post('/', authenticateToken, async (req, res) => {
+router.post('/', authenticateToken, async (req, res) => {           //route to insert a reservation
     try {
         const { carId, startDate, endDate } = req.body;
         const customerId = req.user.id;
@@ -51,7 +51,7 @@ router.post('/', authenticateToken, async (req, res) => {
                 startDate,
                 endDate,
                 totalCost,
-                status: 'rented'
+                status: 'pending'
             }, { transaction: t });
 
             // Update car status
@@ -109,6 +109,26 @@ router.patch('/:id/cancel', authenticateToken, async (req, res) => {
     } catch (error) {
         console.error('Error cancelling reservation:', error);
         res.status(500).json({ message: 'Failed to cancel reservation' });
+    }
+});
+
+router.get('/getAll' , authenticateAdmin , async (req , res) => {
+    try{
+        const reservations = await Reservation.findAll({
+            include: [
+                {
+                    model: Customer,
+                },
+                {
+                    model: Car,
+                    attributes: ['model' , 'year']
+                }
+            ]   
+        });
+        res.json(reservations);
+    }
+    catch(err){
+        res.status(500).json({ message: 'Failed to get All reservations: ' + err });
     }
 });
 

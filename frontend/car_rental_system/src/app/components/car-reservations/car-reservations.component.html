@@ -1,0 +1,18 @@
+<mat-list *ngFor = "let reservation of reservations">
+    <mat-card>
+        <mat-card-header>
+            <mat-card-title>{{reservation.Car.model}} ({{reservation.Car.year}})</mat-card-title>
+            <mat-card-subtitle>Rented by: {{reservation.Customer.name}}</mat-card-subtitle>
+            <mat-card-subtitle>Reservation Status: 
+                <span [class]="'status-badge ' + reservation.status">{{reservation.status}}</span>
+            </mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+            <p>Reservation Starts at: {{ reservation.startDate | date: 'yyyy-MM-dd' }}</p>
+            <p>Reservation Ends at: {{ reservation.endDate | date: 'yyyy-MM-dd' }}</p>
+        </mat-card-content>
+        <mat-card-actions class = "buttons-section">
+            <p>Insert Buttons</p>
+        </mat-card-actions>
+    </mat-card>
+</mat-list>

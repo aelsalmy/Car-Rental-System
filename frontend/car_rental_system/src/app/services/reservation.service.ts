@@ -42,4 +42,7 @@ export class ReservationService {
     updateCarStatus(carId: number, status: string): Observable<any> {
         return this.http.patch(`${this.baseUrl}/cars/${carId}/status`, { status });
     }
-} 
+    getAllReservations(): Observable<any[]>{
+        return this.http.get<any[]>(`${this.baseUrl}/reservations/getAll`);
+    }
+}
