@@ -5,14 +5,15 @@
             <mat-card-header>
                 <mat-card-title>{{reservation.Car.model}} ({{reservation.Car.year}})</mat-card-title>
                 <mat-card-subtitle>
-                    Status: {{reservation.status}}
+                    Status: <span [class]="'status-badge ' + reservation.status">{{reservation.status}}</span>
                 </mat-card-subtitle>
             </mat-card-header>
             <mat-card-content>
                 <p><strong>Office:</strong> {{reservation.Car.Office.name}} - {{reservation.Car.Office.location}}</p>
                 <p><strong>Start Date:</strong> {{reservation.startDate | date}}</p>
                 <p><strong>End Date:</strong> {{reservation.endDate | date}}</p>
-                <p><strong>Total Cost:</strong> ${{reservation.totalCost}}</p>
+                <p><strong>Total Cost:</strong> ${{reservation.Payment?.amount || reservation.totalCost}}</p>
+                <p *ngIf="reservation.Payment"><strong>Payment Status:</strong> <span [class]="'payment-status ' + reservation.Payment.paymentStatus">{{reservation.Payment.paymentStatus}}</span></p>
             </mat-card-content>
             <mat-card-actions *ngIf="reservation.status === 'pending' || reservation.status === 'active'">
                 <button mat-raised-button color="warn" (click)="cancelReservation(reservation.id)">

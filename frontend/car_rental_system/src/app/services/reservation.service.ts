@@ -20,12 +20,19 @@ export class ReservationService {
             throw new Error('No authentication token found');
         }
 
-        // Don't set the status here, let the backend handle it
+        const url = `${this.baseUrl}/reservations`;
+        const { carId, startDate, endDate, totalCost, paymentMethod, paymentStatus } = reservationData;
+        
         const reservationRequest = {
-            ...reservationData
+            carId,
+            startDate,
+            endDate,
+            totalCost,
+            paymentMethod,
+            paymentStatus
         };
 
-        return this.http.post(`${this.baseUrl}/reservations`, reservationRequest);
+        return this.http.post(url, reservationRequest);
     }
 
     getCarDetails(carId: number): Observable<any> {
@@ -49,6 +56,100 @@ export class ReservationService {
     }
 
     getAllReservations(): Observable<any[]>{
-        return this.http.get<any[]>(`${this.baseUrl}/reservations/getAll`);
+        const token = this.loginService.getToken();
+        if (!token) {
+            throw new Error('No authentication token found');
+        }
+        const headers = new HttpHeaders({
+            'Authorization': `Bearer ${token}`
+        });
+        return this.http.get<any[]>(`${this.baseUrl}/reservations/getAll`, { headers });
+    }
+
+    updateReservationStatus(reservationId: number, status: string): Observable<any> {
+        const token = this.loginService.getToken();
+        if (!token) {
+            throw new Error('No authentication token found');
+        }
+        const headers = new HttpHeaders({
+            'Authorization': `Bearer ${token}`
+        });
+        return this.http.patch(`${this.baseUrl}/reservations/${reservationId}/status`, { status }, { headers });
+    }
+
+    searchReservations(searchParams: any): Observable<any[]> {
+        const token = this.loginService.getToken();
+        if (!token) {
+            throw new Error('No authentication token found');
+        }
+
+        // Convert the search params to query string
+        const queryParams = new URLSearchParams();
+        Object.keys(searchParams).forEach(key => {
+            if (searchParams[key]) {
+                queryParams.append(key, searchParams[key]);
+            }
+        });
+
+        const headers = new HttpHeaders({
+            'Authorization': `Bearer ${token}`
+        });
+
+        return this.http.get<any[]>(`${this.baseUrl}/reservations/search?${queryParams.toString()}`, { headers });
+    }
+
+    getReservationReport(startDate?: string, endDate?: string): Observable<any> {
+        const token = this.loginService.getToken();
+        if (!token) {
+            throw new Error('No authentication token found');
+        }
+
+        let url = `${this.baseUrl}/reservations/report`;
+        const params = new URLSearchParams();
+        
+        if (startDate) {
+            params.append('startDate', startDate);
+        }
+        if (endDate) {
+            params.append('endDate', endDate);
+        }
+
+        const queryString = params.toString();
+        if (queryString) {
+            url += `?${queryString}`;
+        }
+
+        return this.http.get(url, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+    }
+
+    getCarReservationReport(carId?: number, startDate?: string, endDate?: string): Observable<any> {
+        const token = this.loginService.getToken();
+        if (!token) {
+            throw new Error('No authentication token found');
+        }
+
+        let url = `${this.baseUrl}/reservations/car-report`;
+        const params = new URLSearchParams();
+        
+        if (carId) {
+            params.append('carId', carId.toString());
+        }
+        if (startDate) {
+            params.append('startDate', startDate);
+        }
+        if (endDate) {
+            params.append('endDate', endDate);
+        }
+
+        const queryString = params.toString();
+        if (queryString) {
+            url += `?${queryString}`;
+        }
+
+        return this.http.get(url, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
     }
 }

@@ -77,40 +77,29 @@ export class PaymentComponent implements OnInit {
             carId: this.carId,
             startDate: this.startDate,
             endDate: this.endDate,
+            totalCost: this.totalAmount,
             paymentMethod,
-            paymentStatus,
-            totalCost: this.totalAmount
+            paymentStatus
         });
 
         const reservationData = {
             carId: this.carId,
             startDate: this.startDate,
             endDate: this.endDate,
+            totalCost: this.totalAmount,
             paymentMethod,
-            paymentStatus,
-            totalCost: this.totalAmount
+            paymentStatus
         };
 
         this.reservationService.createReservation(reservationData).subscribe({
             next: (response) => {
                 console.log('Reservation created successfully:', response);
-                // Update car status to rented
-                this.reservationService.updateCarStatus(this.carId, 'rented').subscribe({
-                    next: () => {
-                        console.log('Car status updated successfully');
-                        this.snackBar.open('Reservation created successfully!', 'Close', { duration: 3000 });
-                        this.router.navigate(['/my-reservations']);
-                    },
-                    error: (error) => {
-                        console.error('Error updating car status:', error);
-                        this.snackBar.open('Error updating car status', 'Close', { duration: 3000 });
-                    }
-                });
+                this.snackBar.open('Reservation created successfully!', 'Close', { duration: 3000 });
+                this.router.navigate(['/my-reservations']);
             },
             error: (error) => {
                 console.error('Error creating reservation:', error);
-                const errorMessage = error.error?.message || 'Error creating reservation';
-                this.snackBar.open(errorMessage, 'Close', { duration: 3000 });
+                this.snackBar.open(error.error.message || 'Failed to create reservation', 'Close', { duration: 3000 });
             }
         });
     }

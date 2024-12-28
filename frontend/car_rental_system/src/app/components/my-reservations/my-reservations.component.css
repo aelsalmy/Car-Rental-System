@@ -23,6 +23,57 @@ mat-card-content p {
 
 mat-card-actions {
     display: flex;
-    justify-content: center;
-    padding: 16px;
+    justify-content: flex-end;
+    padding: 8px;
+}
+
+.status-badge {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.status-badge.pending {
+    background-color: #ffd700;
+    color: #000;
+}
+
+.status-badge.active {
+    background-color: #4caf50;
+    color: #fff;
+}
+
+.status-badge.completed {
+    background-color: #2196f3;
+    color: #fff;
+}
+
+.status-badge.cancelled {
+    background-color: #f44336;
+    color: #fff;
+}
+
+.payment-status {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.payment-status.pending {
+    background-color: #ffd700;
+    color: #000;
+}
+
+.payment-status.completed {
+    background-color: #4caf50;
+    color: #fff;
+}
+
+.payment-status.failed {
+    background-color: #f44336;
+    color: #fff;
 }

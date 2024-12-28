@@ -1,13 +1,13 @@
 <div class="admin-sidebar-container">
   <button class="hamburger-btn" (click)="toggleSidebar()">
-    <i class="material-icons">menu</i>
+    <mat-icon>menu</mat-icon>
   </button>
 
   <div class="sidebar" [class.open]="isOpen">
     <div class="sidebar-header">
       <h2>Admin Panel</h2>
       <button class="close-btn" (click)="toggleSidebar()">
-        <i class="material-icons">close</i>
+        <mat-icon>close</mat-icon>
       </button>
     </div>
 
@@ -15,13 +15,13 @@
       <nav>
         <div *ngFor="let item of menuItems" class="menu-section">
           <div class="menu-group">
-            <i class="material-icons">{{item.icon}}</i>
+            <mat-icon>{{item.icon}}</mat-icon>
             <span>{{item.title}}</span>
           </div>
           
           <ul class="submenu">
             <li *ngFor="let subItem of item.children">
-              <a (click) = "onChangeView(subItem.page)">
+              <a (click)="onChangeView(subItem.page)">
                 {{subItem.title}}
               </a>
             </li>

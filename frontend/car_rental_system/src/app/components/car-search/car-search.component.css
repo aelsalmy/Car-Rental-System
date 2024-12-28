@@ -1,0 +1,106 @@
+.search-container {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.search-field {
+  width: 100%;
+  max-width: 600px;
+  margin-bottom: 16px;
+}
+
+.advanced-search-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+  padding: 16px;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  margin-top: 16px;
+}
+
+.seats-container,
+.price-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.features-container {
+  grid-column: 1 / -1;
+}
+
+.features-container label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+mat-chip-listbox {
+  margin-top: 8px;
+}
+
+.buttons-container {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 16px;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+.results-container {
+  margin-top: 32px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 24px;
+}
+
+.car-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.car-card mat-card-content {
+  flex-grow: 1;
+}
+
+.features-list {
+  margin: 16px 0;
+}
+
+.description {
+  margin-top: 16px;
+  color: #666;
+}
+
+mat-form-field {
+  width: 100%;
+}
+
+mat-expansion-panel {
+  margin: 16px 0;
+}
+
+.mat-mdc-chip-listbox {
+  flex-wrap: wrap;
+}
+
+.mat-mdc-chip {
+  margin: 4px;
+}
+
+@media (max-width: 600px) {
+  .advanced-search-container {
+    grid-template-columns: 1fr;
+  }
+
+  .seats-container,
+  .price-container {
+    grid-template-columns: 1fr;
+  }
+
+  .results-container {
+    grid-template-columns: 1fr;
+  }
+}

@@ -30,4 +30,26 @@ export class CarService {
     updateCarStatus(carId: number, status: string): Observable<any> {
         return this.http.patch(`${this.apiUrl}/cars/${carId}/status`, { status });
     }
-} 
+
+    searchCars(params: any): Observable<any> {
+        // Convert params to query string
+        const queryParams = new URLSearchParams();
+        Object.keys(params).forEach(key => {
+          if (params[key] !== null && params[key] !== undefined && params[key] !== '') {
+            if (Array.isArray(params[key])) {
+              params[key].forEach((value: string) => {
+                queryParams.append(key, value);
+              });
+            } else {
+              queryParams.append(key, params[key]);
+            }
+          }
+        });
+        
+        return this.http.get<any>(`${this.apiUrl}/cars/search?${queryParams.toString()}`);
+    }
+
+    getFeatures(): Observable<string[]> {
+        return this.http.get<string[]>(`${this.apiUrl}/cars/features`);
+    }
+}

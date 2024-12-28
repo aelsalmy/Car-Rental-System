@@ -50,69 +50,49 @@ loginRoutes.post('/register', async (req, res) => {
             });
         }
 
-        // Use transaction to ensure both user and customer are created
-        const result = await sequelize.transaction(async (t) => {
-            // Hash password before saving
-            const hashedPassword = await bcrypt.hash(password, 10);
+        // Hash password before saving
+        const hashedPassword = await bcrypt.hash(password, 10);
 
-            // Create new user
+        try {
             const newUser = await User.create({
                 username: username,
                 password: hashedPassword,
                 user_role: 'user'
-            }, { transaction: t });
+            });
 
-            console.log('Created user:', newUser.toJSON());
-
-            // Create customer record
-            const customer = await Customer.create({
-                name,
-                email,
-                phone,
-                address,
-                userId: newUser.id
-            }, { transaction: t });
-
-            console.log('Created customer:', customer.toJSON());
-
-            return { user: newUser, customer };
-        });
-
-        console.log('Registration successful:', {
-            userId: result.user.id,
-            customerId: result.customer.id
-        });
-
-        res.status(201).json({ 
-            message: 'User registered successfully',
-            userId: result.user.id,
-            customerId: result.customer.id
-        });
-    } catch (error) {
-        console.error('Registration error:', error);
-
-        await Customer.create({
-            name: name,
-            email: email,
-            phone: phone,
-            address: address,
-            userId: newUser.id
-        });
-
-        res.status(201).json({ message: 'User registered successfully' });
-    } catch (error){
-        console.log('Registration error:', error);
-        if (error.name === 'SequelizeUniqueConstraintError') {
-            return res.status(409).json({
-                message: 'Username or email already exists'
+            try {
+                await Customer.create({
+                    name,
+                    email,
+                    phone,
+                    address,
+                    userId: newUser.id
+                });
+                res.status(201).json({ 
+                    message: 'User registered successfully',
+                    userId: newUser.id
+                });
+            } catch (error) {
+                console.error('Customer creation error:', error);
+                // If customer creation fails, we should also delete the user
+                await User.destroy({ where: { id: newUser.id }});
+                throw error; // Re-throw to be caught by outer catch
+            }
+        } catch (error) {
+            console.log('Registration error:', error);
+            if (error.name === 'SequelizeUniqueConstraintError') {
+                return res.status(409).json({
+                    message: 'Username or email already exists'
+                });
+            }
+            res.status(500).json({ 
+                message: 'Registration failed',
+                error: error.message,
+                details: error.original ? error.original.sqlMessage : null
             });
         }
-        res.status(500).json({ 
-            message: 'Registration failed',
-            error: error.message,
-            details: error.original ? error.original.sqlMessage : null
-        });
-
+    } catch (error){
+        console.log('Registration error:', error);
         res.status(500).json({ message: 'Registration failed: ' + error });
     }
 });

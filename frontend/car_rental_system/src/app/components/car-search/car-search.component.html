@@ -1,0 +1,136 @@
+<div class="search-container">
+  <form [formGroup]="searchForm" (ngSubmit)="search()">
+    <!-- Basic Search -->
+    <mat-form-field class="search-field">
+      <mat-label>Search cars</mat-label>
+      <input matInput formControlName="searchTerm" placeholder="Search by model, description...">
+      <button mat-icon-button matSuffix (click)="search()">
+        <mat-icon>search</mat-icon>
+      </button>
+    </mat-form-field>
+
+    <button mat-button type="button" (click)="toggleAdvancedSearch()">
+      {{ showAdvancedSearch ? 'Hide Advanced Search' : 'Show Advanced Search' }}
+      <mat-icon>{{ showAdvancedSearch ? 'expand_less' : 'expand_more' }}</mat-icon>
+    </button>
+
+    <!-- Advanced Search -->
+    <mat-expansion-panel [expanded]="showAdvancedSearch">
+      <div class="advanced-search-container">
+        <!-- Categories -->
+        <mat-form-field>
+          <mat-label>Category</mat-label>
+          <mat-select formControlName="category">
+            <mat-option value="">All Categories</mat-option>
+            <mat-option *ngFor="let cat of categories" [value]="cat.value">
+              {{cat.label}}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <!-- Transmission -->
+        <mat-form-field>
+          <mat-label>Transmission</mat-label>
+          <mat-select formControlName="transmission">
+            <mat-option value="">Any Transmission</mat-option>
+            <mat-option *ngFor="let trans of transmissions" [value]="trans.value">
+              {{trans.label}}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <!-- Fuel Type -->
+        <mat-form-field>
+          <mat-label>Fuel Type</mat-label>
+          <mat-select formControlName="fuelType">
+            <mat-option value="">Any Fuel Type</mat-option>
+            <mat-option *ngFor="let fuel of fuelTypes" [value]="fuel.value">
+              {{fuel.label}}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <!-- Seating Capacity -->
+        <div class="seats-container">
+          <mat-form-field>
+            <mat-label>Min Seats</mat-label>
+            <input matInput type="number" formControlName="minSeats" min="2" max="15">
+          </mat-form-field>
+
+          <mat-form-field>
+            <mat-label>Max Seats</mat-label>
+            <input matInput type="number" formControlName="maxSeats" min="2" max="15">
+          </mat-form-field>
+        </div>
+
+        <!-- Price Range -->
+        <div class="price-container">
+          <mat-form-field>
+            <mat-label>Min Price</mat-label>
+            <input matInput type="number" formControlName="minPrice" min="0">
+          </mat-form-field>
+
+          <mat-form-field>
+            <mat-label>Max Price</mat-label>
+            <input matInput type="number" formControlName="maxPrice" min="0">
+          </mat-form-field>
+        </div>
+
+        <!-- Features -->
+        <div class="features-container">
+          <label>Features:</label>
+          <mat-chip-listbox multiple>
+            <mat-chip-option
+              *ngFor="let feature of availableFeatures"
+              [selected]="selectedFeatures.includes(feature)"
+              (click)="toggleFeature(feature)">
+              {{feature}}
+            </mat-chip-option>
+          </mat-chip-listbox>
+        </div>
+
+        <div class="buttons-container">
+          <button mat-raised-button color="primary" type="submit">Search</button>
+          <button mat-button type="button" (click)="resetFilters()">Reset Filters</button>
+        </div>
+      </div>
+    </mat-expansion-panel>
+  </form>
+
+  <!-- Results -->
+  <div class="results-container">
+    <mat-card *ngFor="let car of cars" class="car-card">
+      <mat-card-header>
+        <mat-card-title>{{car.model}} ({{car.year}})</mat-card-title>
+        <mat-card-subtitle>
+          {{car.category | titlecase}} - {{car.transmission | titlecase}} - {{car.fuelType | titlecase}}
+        </mat-card-subtitle>
+      </mat-card-header>
+      
+      <mat-card-content>
+        <p><strong>Daily Rate:</strong> ${{car.dailyRate}}</p>
+        <p><strong>Seats:</strong> {{car.seatingCapacity}}</p>
+        <p><strong>Office:</strong> {{car.Office.name}} - {{car.Office.location}}</p>
+        
+        <div *ngIf="car.features?.length" class="features-list">
+          <strong>Features:</strong>
+          <mat-chip-listbox>
+            <mat-chip-option *ngFor="let feature of car.features" disabled>
+              {{feature}}
+            </mat-chip-option>
+          </mat-chip-listbox>
+        </div>
+
+        <p *ngIf="car.description" class="description">
+          <strong>Description:</strong> {{car.description}}
+        </p>
+      </mat-card-content>
+
+      <mat-card-actions>
+        <button mat-raised-button color="primary" [routerLink]="['/cars', car.id]">
+          View Details
+        </button>
+      </mat-card-actions>
+    </mat-card>
+  </div>
+</div>

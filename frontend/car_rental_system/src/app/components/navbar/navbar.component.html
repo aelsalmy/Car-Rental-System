@@ -4,6 +4,10 @@
     <button mat-button routerLink="/cars">Cars</button>
     <button mat-button routerLink="/my-reservations">My Reservations</button>
     <button *ngIf="loginService.isLoggedIn()" mat-button routerLink="/register-car">Register Car</button>
+    <a mat-button routerLink="/admin/reports/reservations" *ngIf="isAdmin">
+        <mat-icon>assessment</mat-icon>
+        Reservation Report
+    </a>
     <button *ngIf="loginService.isLoggedIn()" mat-raised-button color="warn" (click)="logout()">Logout</button>
     <button *ngIf="!loginService.isLoggedIn()" mat-button routerLink="/login">Login</button>
 </mat-toolbar>

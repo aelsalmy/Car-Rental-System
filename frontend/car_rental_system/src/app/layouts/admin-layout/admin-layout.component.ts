@@ -1,17 +1,38 @@
 import { Component } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
 import { AdminSidebarComponent } from '../../components/admin-sidebar/admin-sidebar.component';
 import { HomePageComponent } from '../../components/home-page/home-page.component';
+import { CarRegistrationComponent } from '../../components/car-registration/car-registration.component';
+import { CarListingComponent } from '../../components/car-listing/car-listing.component';
+import { CarReservationsComponent } from '../../components/car-reservations/car-reservations.component';
+import { ReservationReportComponent } from '../../components/reservation-report/reservation-report.component';
+import { CarReportComponent } from '../../components/car-report/car-report.component';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-admin-layout',
   standalone: true,
-  imports: [RouterOutlet, AdminSidebarComponent , HomePageComponent],
+  imports: [
+    CommonModule,
+    AdminSidebarComponent,
+    HomePageComponent,
+    CarRegistrationComponent,
+    CarListingComponent,
+    CarReservationsComponent,
+    ReservationReportComponent,
+    CarReportComponent
+  ],
   template: `
     <div class="admin-layout">
       <app-admin-sidebar (changeView)="changeView($event)"></app-admin-sidebar>
       <div class="admin-content">
-        <app-home-page [activeView]="activeView" ></app-home-page>
+        <ng-container [ngSwitch]="activeView">
+          <app-home-page *ngSwitchCase="'Dashboard'"></app-home-page>
+          <app-car-registration *ngSwitchCase="'RegisterCar'"></app-car-registration>
+          <app-car-listing *ngSwitchCase="'CarList'"></app-car-listing>
+          <app-car-reservations *ngSwitchCase="'CarReservations'"></app-car-reservations>
+          <app-reservation-report *ngSwitchCase="'ReservationReport'"></app-reservation-report>
+          <app-car-report *ngSwitchCase="'CarReport'"></app-car-report>
+        </ng-container>
       </div>
     </div>
   `,
@@ -28,10 +49,9 @@ import { HomePageComponent } from '../../components/home-page/home-page.componen
   `]
 })
 export class AdminLayoutComponent {
-  activeView: string = 'CarList'
+  activeView: string = 'CarList';
 
-  changeView(view: any){
-    console.log('Received request to: ' + view)
-    this.activeView = view
+  changeView(view: string) {
+    this.activeView = view;
   }
 }

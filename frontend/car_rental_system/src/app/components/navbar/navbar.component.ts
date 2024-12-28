@@ -4,6 +4,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { Router, RouterModule } from '@angular/router';
 import { LoginService } from '../../services/login.service';
 import { CommonModule } from '@angular/common';
+import { MatIconModule } from '@angular/material/icon';
 
 @Component({
     selector: 'app-navbar',
@@ -12,7 +13,8 @@ import { CommonModule } from '@angular/common';
         MatToolbarModule,
         MatButtonModule,
         CommonModule,
-        RouterModule
+        RouterModule,
+        MatIconModule
     ],
     templateUrl: './navbar.component.html',
     styleUrls: [
@@ -25,8 +27,12 @@ export class NavbarComponent {
         private router: Router
     ) { }
 
+    get isAdmin(): boolean {
+        return this.loginService.isAdmin();
+    }
+
     logout() {
         this.loginService.logout();
         this.router.navigate(['/login']);
     }
-} 
+}
