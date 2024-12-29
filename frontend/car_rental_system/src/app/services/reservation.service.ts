@@ -187,4 +187,31 @@ export class ReservationService {
             headers: { Authorization: `Bearer ${token}` }
         });
     }
+
+    getPaymentReport(startDate?: string , endDate?:string): Observable<any>{
+        const token = this.loginService.getToken();
+        if (!token) {
+            throw new Error('No authentication token found');
+        }
+
+        let url = `${this.baseUrl}/reports/payment`;
+        const params = new URLSearchParams();
+        
+        if (startDate) {
+            params.append('startDate', startDate);
+        }
+
+        if (endDate) {
+            params.append('endDate', endDate);
+        }
+
+        const queryString = params.toString();
+        if (queryString) {
+            url += `?${queryString}`;
+        }
+
+        return this.http.get(url, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+    }
 }

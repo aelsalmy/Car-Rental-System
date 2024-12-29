@@ -53,6 +53,7 @@ export class ReservationReportComponent implements OnInit {
         // Car details
         (data.Car?.model || '').toLowerCase().includes(searchStr) ||
         (data.Car?.plateId || '').toLowerCase().includes(searchStr) ||
+        (data.Car?.year || '').toString().toLowerCase().includes(searchStr) ||
         (data.Car?.category || '').toLowerCase().includes(searchStr) ||
         // Customer details
         (data.Customer?.name || '').toLowerCase().includes(searchStr) ||

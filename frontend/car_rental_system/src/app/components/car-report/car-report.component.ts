@@ -59,6 +59,10 @@ export class CarReportComponent implements OnInit {
     this.dataSource.filterPredicate = (data: any, filter: string) => {
       const searchStr = filter.toLowerCase();
       return (
+        (data.Car?.model || '').toLowerCase().includes(searchStr) ||
+        (data.Car?.plateId || '').toLowerCase().includes(searchStr) ||
+        (data.Car?.year || '').toString().toLowerCase().includes(searchStr) ||
+        (data.Car?.category || '').toLowerCase().includes(searchStr) ||
         // Customer details
         (data.Customer?.name || '').toLowerCase().includes(searchStr) ||
         (data.Customer?.phone || '').toLowerCase().includes(searchStr) ||

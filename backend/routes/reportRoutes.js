@@ -350,4 +350,78 @@ router.get('/customer' , authenticateAdmin , async (req , res) => {
     }
 });
 
+router.get('/payment' , authenticateAdmin , async (req,res) => {
+    try {
+        const { startDate , endDate } = req.query;
+
+        let payments;
+
+        const whereClause = {};
+        const conditions = [];
+
+        // Handle start date filtering
+        if (startDate) {
+            const start = new Date(startDate);
+            const startDateStr = start.toISOString().split('T')[0];
+            conditions.push(
+                Sequelize.where(
+                    Sequelize.fn('DATE', Sequelize.col('Payment.updatedAt')),
+                    '>=',
+                    startDateStr
+                )
+            );
+        }
+
+        // Handle end date filtering
+        if (endDate) {
+            const end = new Date(endDate);
+            const endDateStr = end.toISOString().split('T')[0];
+            conditions.push(
+                Sequelize.where(
+                    Sequelize.fn('DATE', Sequelize.col('Payment.updatedAt')),
+                    '<=',
+                    endDateStr
+                )
+            );
+        }
+
+        conditions.push({ paymentStatus: 'paid' });
+
+        // Only add conditions if we have any
+        if (conditions.length > 0) {
+            whereClause[Op.and] = conditions;
+        }
+
+        payments = await Payment.findAll({
+            where: whereClause,
+            include: [
+                {
+                    model: Reservation,
+                    include:[
+                        {
+                            model: Car,
+                            include:[
+                                {
+                                    model: Office,
+                                    attributes:['name' , 'location']
+                                }
+                            ],
+                            attributes: ['model' , 'year' , 'plateId']
+                        },
+                        {
+                            model: Customer,
+                            attributes: ['name' , 'phone' , 'email']
+                        }
+                    ],
+                    attributes: ['id']
+                }
+            ],
+        })
+        res.json(payments);
+    } catch (error) {
+        console.error('Error generating payment report:', error);
+        res.status(500).json({ message: 'Failed to generate report', error: error.message });
+    }
+});
+
 module.exports = router;

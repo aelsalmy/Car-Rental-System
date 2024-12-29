@@ -1,5 +1,5 @@
 <div class="report-container">
-    <h2>Reservation Report</h2>
+    <h2>Payment Report</h2>
   
     <form [formGroup]="searchForm" class="date-filter-form">
       <mat-form-field>
@@ -31,5 +31,5 @@
       <mat-hint>Search across all fields</mat-hint>
     </mat-form-field>
   
-    <app-report-table [dataSource] = "dataSource" [report] = "'reservation-report'"></app-report-table>
-  </div>
+    <app-payment-report-table [dataSource] = "dataSource"></app-payment-report-table>
+</div>

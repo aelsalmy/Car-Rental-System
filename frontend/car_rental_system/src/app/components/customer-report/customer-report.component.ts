@@ -76,6 +76,7 @@ export class CustomerReportComponent {
   
     ngOnInit() {
       this.loadCustomers();
+      this.loadReport();
     }
   
     loadCustomers() {

@@ -6,7 +6,7 @@ const Car = sequelize.define('Car', {
     id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
     model: { type: DataTypes.STRING, allowNull: false },
     year: { type: DataTypes.INTEGER, allowNull: false },
-    plateId: { type: DataTypes.STRING, allowNull: false, unique: true },
+    plateId: { type: DataTypes.STRING, allowNull: false, unique: 'plateId' },
     status: { 
         type: DataTypes.ENUM('active', 'out_of_service', 'rented'), 
         defaultValue: 'active',
@@ -69,7 +69,7 @@ const Car = sequelize.define('Car', {
 const Customer = sequelize.define('Customer', {
     id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
     name: { type: DataTypes.STRING, allowNull: false },
-    email: { type: DataTypes.STRING, unique: true, allowNull: false },
+    email: { type: DataTypes.STRING, unique: 'email', allowNull: false },
     phone: { type: DataTypes.STRING },
     address: { type: DataTypes.STRING },
     userId: { type: DataTypes.INTEGER, allowNull: false }

@@ -11,7 +11,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ReservationService } from '../../services/reservation.service';
 import { MatTableDataSource } from '@angular/material/table';
-import { ReportTableComponent } from '../report-table/report-table.component';
+import { PaymentReportTableComponent } from '../payment-report-table/payment-report-table.component';
 
 @Component({
   selector: 'app-payment-report',
@@ -27,7 +27,7 @@ import { ReportTableComponent } from '../report-table/report-table.component';
     MatNativeDateModule,
     MatButtonModule,
     ReactiveFormsModule,
-    ReportTableComponent
+    PaymentReportTableComponent
   ],
   templateUrl: './payment-report.component.html',
   styleUrl: './payment-report.component.css'
@@ -82,8 +82,9 @@ export class PaymentReportComponent {
       const start = startDate ? new Date(startDate).toISOString() : undefined;
       const end = endDate ? new Date(endDate).toISOString() : undefined;
   
-      this.reservationService.getReservationReport(start, end).subscribe({
+      this.reservationService.getPaymentReport(start, end).subscribe({
         next: (data) => {
+          console.log('Get Payment Report: ' , data);
           this.dataSource.data = data;
         },
         error: (error) => {
