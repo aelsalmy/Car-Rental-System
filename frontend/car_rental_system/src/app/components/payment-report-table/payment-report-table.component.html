@@ -52,7 +52,9 @@
       <ng-container matColumnDef="paymentMethod">
         <th mat-header-cell *matHeaderCellDef mat-sort-header> Payment Method </th>
         <td mat-cell *matCellDef="let row"> 
-          <span class="status-badge {{status == ''? row.status : status}}">{{row.paymentMethod}}</span>
+          <span class="payment-method-badge payment-method-{{row.paymentMethod}}">
+            {{row.paymentMethod === 'credit_card' ? 'Credit Card' : 'Cash'}}
+          </span>
         </td>
       </ng-container>
 

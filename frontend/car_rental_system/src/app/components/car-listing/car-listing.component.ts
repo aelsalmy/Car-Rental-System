@@ -15,6 +15,8 @@ import { AuthService } from '../../services/auth.service';
 import { MatIconModule } from '@angular/material/icon';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatChipsModule } from '@angular/material/chips';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { CarDetailsDialogComponent } from '../car-details-dialog/car-details-dialog.component';
 
 @Component({
     selector: 'app-car-listing',
@@ -32,7 +34,8 @@ import { MatChipsModule } from '@angular/material/chips';
         MatGridListModule,
         MatIconModule,
         MatExpansionModule,
-        MatChipsModule
+        MatChipsModule,
+        MatDialogModule
     ],
     templateUrl: './car-listing.component.html',
     styleUrls: ['./car-listing.component.css']
@@ -81,7 +84,8 @@ export class CarListingComponent implements OnInit {
     constructor(
         public authService: AuthService,
         private carService: CarService,
-        private router: Router
+        private router: Router,
+        private dialog: MatDialog
     ) { }
 
     ngOnInit() {
@@ -224,6 +228,14 @@ export class CarListingComponent implements OnInit {
             error: (error) => {
                 console.error('Error updating car status:', error);
             }
+        });
+    }
+
+    openCarDetails(car: any) {
+        this.dialog.open(CarDetailsDialogComponent, {
+            data: car,
+            width: '600px',
+            maxHeight: '90vh'
         });
     }
 }

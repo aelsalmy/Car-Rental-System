@@ -3,12 +3,12 @@ import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { AuthService } from '../../services/auth.service';
-import { Router } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 
 @Component({
   selector: 'app-nav-header',
   standalone: true,
-  imports: [CommonModule, MatButtonModule, MatIconModule],
+  imports: [CommonModule, MatButtonModule, MatIconModule, RouterModule],
   template: `
     <div class="nav-header" *ngIf="authService.isLoggedIn()">
       <div class="left-section">
@@ -18,10 +18,19 @@ import { Router } from '@angular/router';
                 (click)="toggleSidebar()">
           <mat-icon>menu</mat-icon>
         </button>
+        <button *ngIf="!(authService.isAdmin$ | async)"
+                mat-raised-button
+                color="basic"
+                class="white-button"
+                routerLink="/my-reservations">
+          <mat-icon>list_alt</mat-icon>
+          My Reservations
+        </button>
       </div>
       <div class="right-section">
-        <button mat-button 
-                class="logout-button"
+        <button mat-raised-button 
+                color="basic"
+                class="white-button"
                 (click)="logout()">
           <mat-icon>logout</mat-icon>
           Logout
@@ -48,24 +57,24 @@ import { Router } from '@angular/router';
     .left-section, .right-section {
       display: flex;
       align-items: center;
+      gap: 8px;
     }
 
     .menu-button {
-      margin-right: 16px;
+      color: white;
     }
 
-    .logout-button {
+    .white-button {
+      background-color: white;
       display: flex;
       align-items: center;
-      background-color: white;
       gap: 4px;
     }
 
-    .logout-button mat-icon {
+    .white-button mat-icon {
       font-size: 20px;
       height: 20px;
       width: 20px;
-      margin-right: 4px;
     }
   `]
 })
@@ -76,10 +85,11 @@ export class NavHeaderComponent {
   ) {}
 
   toggleSidebar() {
-    // Implement sidebar toggle logic
+    // Implementation for sidebar toggle
   }
 
   logout() {
     this.authService.logout();
+    this.router.navigate(['/login']);
   }
 }

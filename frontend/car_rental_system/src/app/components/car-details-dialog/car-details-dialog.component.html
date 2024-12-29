@@ -1,0 +1,37 @@
+<h2 mat-dialog-title>{{data.model}} ({{data.year}})</h2>
+<mat-dialog-content class="dialog-content">
+  <div class="info-section">
+    <h3>Basic Information</h3>
+    <p><strong>Plate Number:</strong> {{data.plateId}}</p>
+    <p><strong>Daily Rate:</strong> ${{data.dailyRate}}</p>
+    <p><strong>Office:</strong> {{data.Office.name}} - {{data.Office.location}}</p>
+    <p><strong>Status:</strong> {{data.status}}</p>
+  </div>
+
+  <div class="info-section">
+    <h3>Specifications</h3>
+    <p><strong>Category:</strong> {{data.category | titlecase}}</p>
+    <p><strong>Transmission:</strong> {{data.transmission | titlecase}}</p>
+    <p><strong>Fuel Type:</strong> {{data.fuelType | titlecase}}</p>
+  </div>
+
+  <div class="info-section" *ngIf="data.features?.length">
+    <h3>Features</h3>
+    <ul>
+      <li *ngFor="let feature of data.features">{{feature}}</li>
+    </ul>
+  </div>
+
+  <div class="info-section" *ngIf="data.specifications">
+    <h3>Additional Specifications</h3>
+    <p>{{data.specifications}}</p>
+  </div>
+
+  <div class="info-section" *ngIf="data.description">
+    <h3>Description</h3>
+    <p>{{data.description}}</p>
+  </div>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button (click)="close()">Close</button>
+</mat-dialog-actions>

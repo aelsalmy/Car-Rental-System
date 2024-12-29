@@ -2,35 +2,42 @@
   <h2>Car Reservations</h2>
 
   <form [formGroup]="searchForm" class="filter-form">
-    <mat-form-field>
-      <mat-label>Select Car</mat-label>
-      <mat-select formControlName="carId">
-        <mat-option *ngFor="let car of cars" [value]="car.id">
-          {{car.model}} ({{car.plateId}}) - {{car.category}}
-        </mat-option>
-      </mat-select>
-      <mat-hint>Select a car to view its reservations</mat-hint>
-    </mat-form-field>
+    <div class="filters-row">
+      <mat-form-field>
+        <mat-label>Select Car</mat-label>
+        <mat-select formControlName="carId">
+          <mat-option *ngFor="let car of cars" [value]="car.id">
+            {{car.model}} ({{car.plateId}}) - {{car.category}}
+          </mat-option>
+        </mat-select>
+        <mat-hint>Select a car to view its reservations</mat-hint>
+      </mat-form-field>
 
-    <mat-form-field>
-      <mat-label>Start Date</mat-label>
-      <input matInput [matDatepicker]="startPicker" formControlName="startDate">
-      <mat-datepicker-toggle matSuffix [for]="startPicker"></mat-datepicker-toggle>
-      <mat-datepicker #startPicker></mat-datepicker>
-      <mat-hint>Filter by exact start date</mat-hint>
-    </mat-form-field>
+      <mat-form-field>
+        <mat-label>Start Date</mat-label>
+        <input matInput [matDatepicker]="startPicker" formControlName="startDate">
+        <mat-datepicker-toggle matSuffix [for]="startPicker"></mat-datepicker-toggle>
+        <mat-datepicker #startPicker></mat-datepicker>
+        <mat-hint>Filter by exact start date</mat-hint>
+      </mat-form-field>
 
-    <mat-form-field>
-      <mat-label>End Date</mat-label>
-      <input matInput [matDatepicker]="endPicker" formControlName="endDate">
-      <mat-datepicker-toggle matSuffix [for]="endPicker"></mat-datepicker-toggle>
-      <mat-datepicker #endPicker></mat-datepicker>
-      <mat-hint>Filter by exact end date</mat-hint>
-    </mat-form-field>
+      <mat-form-field>
+        <mat-label>End Date</mat-label>
+        <input matInput [matDatepicker]="endPicker" formControlName="endDate">
+        <mat-datepicker-toggle matSuffix [for]="endPicker"></mat-datepicker-toggle>
+        <mat-datepicker #endPicker></mat-datepicker>
+        <mat-hint>Filter by exact end date</mat-hint>
+      </mat-form-field>
+    </div>
 
-    <button mat-raised-button color="primary" (click)="loadReport()">
-      Generate Report
-    </button>
+    <div class="buttons-row">
+      <button mat-raised-button color="primary" (click)="loadReport()">
+        Generate Report
+      </button>
+      <button mat-raised-button color="accent" (click)="resetFilters()">
+        Reset Filters
+      </button>
+    </div>
   </form>
 
   <mat-form-field class="filter-field">
@@ -41,5 +48,5 @@
     <mat-hint>Search across all fields</mat-hint>
   </mat-form-field>
 
-  <app-report-table [dataSource] = "dataSource" [report] = "'car-report'"></app-report-table>
+  <app-report-table [dataSource]="dataSource" [report]="'car-report'"></app-report-table>
 </div>

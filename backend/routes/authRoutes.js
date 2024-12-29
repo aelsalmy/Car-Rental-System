@@ -4,7 +4,7 @@ const { Customer } = require('../models/carModels')
 const bcrypt = require('bcrypt')
 const loginRoutes = express.Router()
 const jwt = require('jsonwebtoken')
-const sequelize = require('../config/database'); // Assuming you have a db config file
+const sequelize = require('../config/database');
 
 loginRoutes.get('', async (req, res) => {
     res.send("TEST")

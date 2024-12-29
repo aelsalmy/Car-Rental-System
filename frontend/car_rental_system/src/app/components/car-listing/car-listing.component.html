@@ -93,7 +93,7 @@
     <!-- Car Grid -->
     <mat-grid-list cols="4" rowHeight="1:1" gutterSize = "16px">
         <mat-grid-tile *ngFor="let car of filteredCars">
-            <mat-card class="car-card">
+            <mat-card class="car-card" (click)="openCarDetails(car)">
                 <mat-card-header>
                     <mat-card-title>{{car.model}} ({{car.year}})</mat-card-title>
                     <mat-card-subtitle>
@@ -110,18 +110,18 @@
                     <p *ngIf="car.specifications"><strong>Specifications:</strong> {{car.specifications}}</p>
                 </mat-card-content>
                 <mat-card-actions>
-                    <div class="card-buttons">
+                    <div class="card-buttons" (click)="$event.stopPropagation()">
                         <button mat-raised-button color="primary" *ngIf="(car.status !== 'out_of_service') && !(authService.isAdmin$ | async)" 
-                        (click)="reserveCar(car.id)" class = "car-button">
+                        (click)="reserveCar(car.id)" class="car-button">
                             Reserve Now
                         </button>
                         <button mat-raised-button color="warn" *ngIf="(authService.isAdmin$ | async) && car.status != 'out_of_service'" 
-                        (click)="updateStatus(car.id, 'out_of_service')" class = "car-button">
+                        (click)="updateStatus(car.id, 'out_of_service')" class="car-button">
                             Set Out of Service
                         </button>
-                        <button mat-raised-button color = "primary" *ngIf="(authService.isAdmin$ | async) && car.status == 'out_of_service'" 
-                        (click)="updateStatus(car.id, 'active')" class = "car-button">
-                            Set As Active
+                        <button mat-raised-button color="primary" *ngIf="(authService.isAdmin$ | async) && car.status === 'out_of_service'" 
+                        (click)="updateStatus(car.id, 'active')" class="car-button">
+                            Set Active
                         </button>
                     </div>
                 </mat-card-actions>

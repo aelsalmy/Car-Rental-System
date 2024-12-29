@@ -3,6 +3,8 @@
     min-height: 200px;
     max-height: 600px;
     overflow: auto;
+    width: 100%;
+    overflow-x: auto;
 }
   
 table {
@@ -74,7 +76,12 @@ table {
     color: rgba(0, 0, 0, 0.6);
     margin-top: 4px;
 }
-  
+
+.customer-email, .office-location {
+    font-size: 0.8em;
+    color: #666;
+}
+
 .mat-mdc-form-field-hint {
     color: rgba(0, 0, 0, 0.6);
 }
@@ -82,4 +89,25 @@ table {
 .status-badge.rented{
     background-color: #d4edda;
     color: #155724;
+}
+
+.payment-method-badge {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+    display: inline-block;
+    min-width: 70px;
+    text-align: center;
+}
+
+.payment-method-cash {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.payment-method-credit_card {
+    background-color: #2E7D32;
+    color: white;
 }

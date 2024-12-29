@@ -1,7 +1,8 @@
 <div class="report-container">
-    <h2>Customer Reservations</h2>
-  
-    <form [formGroup]="searchForm" class="filter-form">
+  <h2>Customer Reservations</h2>
+
+  <form [formGroup]="searchForm" class="filter-form">
+    <div class="filters-row">
       <mat-form-field>
         <mat-label>Select Customer</mat-label>
         <mat-select formControlName="carId">
@@ -11,20 +12,52 @@
         </mat-select>
         <mat-hint>Select a Customer to view</mat-hint>
       </mat-form-field>
-  
+
+      <mat-form-field>
+        <mat-label>Start Date</mat-label>
+        <input matInput [matDatepicker]="startPicker" formControlName="startDate" (dateChange)="loadReport()">
+        <mat-datepicker-toggle matIconSuffix [for]="startPicker"></mat-datepicker-toggle>
+        <mat-datepicker #startPicker></mat-datepicker>
+        <mat-hint>Filter by start date</mat-hint>
+      </mat-form-field>
+
+      <mat-form-field>
+        <mat-label>End Date</mat-label>
+        <input matInput [matDatepicker]="endPicker" formControlName="endDate" (dateChange)="loadReport()">
+        <mat-datepicker-toggle matIconSuffix [for]="endPicker"></mat-datepicker-toggle>
+        <mat-datepicker #endPicker></mat-datepicker>
+        <mat-hint>Filter by end date</mat-hint>
+      </mat-form-field>
+
+      <mat-form-field>
+        <mat-label>Status</mat-label>
+        <mat-select formControlName="status" (selectionChange)="loadReport()">
+          <mat-option value="">All Statuses</mat-option>
+          <mat-option *ngFor="let status of statuses" [value]="status.value">
+            {{status.label}}
+          </mat-option>
+        </mat-select>
+        <mat-hint>Filter by reservation status</mat-hint>
+      </mat-form-field>
+    </div>
+
+    <div class="buttons-row">
       <button mat-raised-button color="primary" (click)="loadReport()">
         Generate Report
       </button>
-    </form>
-  
-    <mat-form-field class="filter-field">
-      <mat-label>Search</mat-label>
-      <input matInput (keyup)="applyFilter($event)" 
-             placeholder="Search by customer name, office location..." 
-             #input>
-      <mat-hint>Search across all fields</mat-hint>
-    </mat-form-field>
-  
-    <app-report-table [dataSource] = "dataSource" [report] = "'car-report'"></app-report-table>
+      <button mat-raised-button color="accent" (click)="resetFilters()">
+        Reset Filters
+      </button>
+    </div>
+  </form>
+
+  <mat-form-field class="filter-field">
+    <mat-label>Search</mat-label>
+    <input matInput (keyup)="applyFilter($event)" 
+           placeholder="Search by customer name, office location..." 
+           #input>
+    <mat-hint>Search across all fields</mat-hint>
+  </mat-form-field>
+
+  <app-report-table [dataSource]="dataSource" [report]="'car-report'"></app-report-table>
 </div>
-  
