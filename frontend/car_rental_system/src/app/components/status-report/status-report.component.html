@@ -12,6 +12,15 @@
         </mat-select>
         <mat-hint>Select status to view its cars</mat-hint>
       </mat-form-field>
+      
+      <mat-form-field>
+        <mat-label>Date</mat-label>
+        <input matInput [matDatepicker]="startPicker" formControlName="startDate">
+        <mat-datepicker-toggle matSuffix [for]="startPicker"></mat-datepicker-toggle>
+        <mat-datepicker #startPicker></mat-datepicker>
+        <mat-hint>Filter by exact date</mat-hint>
+      </mat-form-field>
+      
     </div>
 
     <div class="buttons-row">

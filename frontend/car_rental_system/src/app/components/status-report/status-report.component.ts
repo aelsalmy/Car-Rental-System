@@ -11,6 +11,7 @@ import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ReservationService } from '../../services/reservation.service';
 import { CarService } from '../../services/car.service';
 import { CarReportTableComponent } from '../car-report-table/car-report-table.component';
+import { MatDatepickerModule } from '@angular/material/datepicker';
 
 @Component({
   selector: 'app-status-report',
@@ -25,7 +26,8 @@ import { CarReportTableComponent } from '../car-report-table/car-report-table.co
     MatButtonModule,
     MatSelectModule,
     ReactiveFormsModule,
-    CarReportTableComponent
+    CarReportTableComponent,
+    MatDatepickerModule
   ],
   templateUrl: './status-report.component.html',
   styleUrls: ['./status-report.component.css']
@@ -47,7 +49,8 @@ export class StatusReportComponent implements OnInit {
   ) {
     this.dataSource = new MatTableDataSource();
     this.searchForm = this.fb.group({
-      carId: ['']
+      carId: [''],
+      startDate: [''],
     });
 
     this.dataSource.filterPredicate = (data: any, filter: string) => {
@@ -76,9 +79,15 @@ export class StatusReportComponent implements OnInit {
 
   loadReport() {
     const status = this.searchForm.get('carId')?.value;
+    const startDate = this.searchForm.get('startDate')?.value;
+
     this.statusParam = status;
+
+    const date = startDate ? new Date(startDate).toISOString() : undefined;
+
+    console.log('Date: ' + date + ' Status: ' + status)
     
-    this.carService.getStatusReport(status).subscribe({
+    this.carService.getStatusReport(status , date).subscribe({
       next: (data: any) => {
         console.log('Get Cars by Status Report: ', JSON.stringify(data, null, 2));
         this.dataSource.data = data;

@@ -128,6 +128,7 @@ export class ReservationReportComponent implements OnInit {
   formatDate(date: string): string {
     if (!date) return '';
     const d = new Date(date);
+    
     return `${d.toLocaleDateString()} ${d.toLocaleTimeString()}`;
   }
 }

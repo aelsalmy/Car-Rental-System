@@ -156,8 +156,41 @@ router.get('/reservation', authenticateAdmin, async (req, res) => {
 
 router.get('/status', authenticateAdmin, async (req, res) => {
     try {
-        const { status } = req.query;
+        const { status, date } = req.query;
         
+        const whereClause = {};
+        const conditions = [];
+
+        if (status) {
+            conditions.push({ status: 'active' });
+        }
+
+        // Handle start date filtering
+        if (date) {
+            const start = new Date(date);
+            const startDateStr = start.toISOString().split('T')[0];
+
+            conditions.push(
+                Sequelize.where(
+                    Sequelize.fn('DATE', Sequelize.col('startDate')),
+                    '<=',
+                    startDateStr
+                )
+            );
+
+            conditions.push(
+                Sequelize.where(
+                    Sequelize.fn('DATE', Sequelize.col('endDate')),
+                    '>=',
+                    startDateStr
+                )
+            );
+        }
+        // Only add conditions if we have any
+        if (conditions.length > 0) {
+            whereClause[Op.and] = conditions;
+        }
+
         let cars;
         const carMap = new Map();
 
@@ -167,7 +200,6 @@ router.get('/status', authenticateAdmin, async (req, res) => {
             include: [
                     {
                         model: Car,
-                        where: { status: 'rented' },  // Only get rented cars
                         include: [
                             {
                                 model: Office,
@@ -249,10 +281,10 @@ router.get('/status', authenticateAdmin, async (req, res) => {
                             },
                             {
                                 model: Customer,
-                                attributes: ['id', 'name' , 'phone']
+                                attributes: ['id', 'name' , 'phone' , 'email']
                             }
                         ],
-                        attributes: ['carId' , 'customerId'],
+                        attributes: ['id', 'carId', 'customerId', 'startDate', 'endDate'],
                         order: [['startDate', 'DESC']]
                     });
 
@@ -437,7 +469,7 @@ router.get('/customer' , authenticateAdmin , async (req , res) => {
         
         res.json(customerReservations);
     } catch (error) {
-        console.error('Error generating car reservation report:', error);
+        console.error('Error generating car status report:', error);
         res.status(500).json({ message: 'Failed to generate report', error: error.message });
     }
 });
