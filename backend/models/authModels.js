@@ -1,28 +1,24 @@
-const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database');
+const pool = require('../config/database');
 
-const User = sequelize.define('User', {
-    id: { type: DataTypes.INTEGER, allowNull: false, autoIncrement: true, primaryKey: true },
-    username: {
-        type: DataTypes.STRING(255),
-        allowNull: false,
-        unique: 'username',
-        validate: {
-            notNull: { msg: 'Username is required' },
-            notEmpty: { msg: 'Username cannot be empty' }
-        }
+const User = {
+    async findByUsername(username) {
+        const [rows] = await pool.query('SELECT * FROM user WHERE username = ?', [username]);
+        return rows[0];
     },
-    password: { type: DataTypes.STRING(255), allowNull: false },
-    user_role: { 
-        type: DataTypes.ENUM('user', 'admin', 'customer'), 
-        defaultValue: 'customer' 
+    
+    async create(userData) {
+        const { username, password, user_role = 'customer' } = userData;
+        const [result] = await pool.query(
+            'INSERT INTO user (username, password, user_role, createdAt, updatedAt) VALUES (?, ?, ?, NOW(), NOW())',
+            [username, password, user_role]
+        );
+        return { id: result.insertId, username, user_role, createdAt: result.createdAt, updatedAt: result.updatedAt };
     },
-},
-    {
-        tablename: 'user',
-        timestamps: false,
-        freezeTableName: true,
-        indexes: [{ unique: true, fields: ['username'] }]
-    });
+    
+    async findById(id) {
+        const [rows] = await pool.query('SELECT * FROM user WHERE id = ?', [id]);
+        return rows[0];
+    }
+};
 
 module.exports = { User };
