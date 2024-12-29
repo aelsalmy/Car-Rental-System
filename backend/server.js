@@ -5,6 +5,7 @@ const loginRoutes = require('./routes/authRoutes.js')
 const carRoutes = require('./routes/carRoutes.js')
 const officeRoutes = require('./routes/officeRoutes.js')
 const reservationRoutes = require('./routes/reservationRoutes.js')
+const reportRoutes = require('./routes/reportRoutes.js')
 const sequelize = require('./config/database')
 const cors = require('cors')
 
@@ -21,6 +22,7 @@ app.use('/api/auth', loginRoutes)
 app.use('/api/cars', carRoutes)
 app.use('/api/offices', officeRoutes)
 app.use('/api/reservations', reservationRoutes)
+app.use('/api/reports' , reportRoutes)
 
 console.log('JWT_SECRET loaded:', !!process.env.JWT_SECRET);
 

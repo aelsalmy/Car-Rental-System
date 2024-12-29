@@ -28,6 +28,7 @@ export class AuthService {
   private lastCheckedToken: string | null = null;
   public token$ = this.tokenSubject.asObservable();
   public isAdmin$ = this.isAdminSubject.asObservable();
+  public isNotAdmin$ = !this.isAdminSubject.asObservable();
 
   constructor(
     private http: HttpClient,

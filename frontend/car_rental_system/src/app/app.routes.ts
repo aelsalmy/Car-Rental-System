@@ -13,6 +13,7 @@ import { HomePageComponent } from './components/home-page/home-page.component';
 import { ReservationReportComponent } from './components/reservation-report/reservation-report.component';
 import { CarReservationsComponent } from './components/car-reservations/car-reservations.component';
 import { CarReportComponent } from './components/car-report/car-report.component';
+import { PaymentComponent } from './components/payment/payment.component';
 
 export const routes: Routes = [
     { 
@@ -52,7 +53,7 @@ export const routes: Routes = [
     { 
         path: 'reservation', 
         component: ReservationComponent,
-        canActivate: [authGuard]
+        canActivate: [authGuard],
     },
     { 
         path: 'my-reservations', 
@@ -60,7 +61,11 @@ export const routes: Routes = [
         canActivate: [authGuard]
     },
     {
+        path: 'payment',
+        component: PaymentComponent
+    },
+    {
         path: '**',
         redirectTo: 'cars'
-    }
+    },
 ];

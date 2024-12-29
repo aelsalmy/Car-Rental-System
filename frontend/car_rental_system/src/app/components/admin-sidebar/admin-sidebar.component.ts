@@ -30,7 +30,7 @@ export class AdminSidebarComponent {
       children: [
         { title: 'Period Reservations', page: 'ReservationReport' },
         { title: 'Car Reservations', page: 'CarReport' },
-        { title: 'Car Status Report', page: 'CarStatusReport' },
+        { title: 'Car Status Report', page: 'StatusReport' },
         { title: 'Customer Reservations', page: 'CustomerReport' },
         { title: 'Payment Reports', page: 'PaymentReport' }
       ]

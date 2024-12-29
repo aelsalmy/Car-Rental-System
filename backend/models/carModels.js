@@ -58,7 +58,7 @@ const Car = sequelize.define('Car', {
     features: {
         type: DataTypes.JSON,
         allowNull: false,
-        defaultValue: []
+        defaultValue: {}
     },
     description: { 
         type: DataTypes.TEXT,

@@ -3,7 +3,8 @@ require('dotenv').config();
 
 const sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, process.env.DB_PASSWORD, {
     host: process.env.DB_HOST,
-    port: 3306,
+    alter: true,
+    port: 3307,
     dialect: 'mysql',
     define: {
         // Disable automatic index creation for all foreign keys
@@ -11,7 +12,7 @@ const sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, proces
         // Only create indexes that we explicitly define
         timestamps: true
     },
-    logging: false // Disable logging to reduce noise
+    logging: false, // Disable logging to reduce noise
 })
 
 module.exports = sequelize;

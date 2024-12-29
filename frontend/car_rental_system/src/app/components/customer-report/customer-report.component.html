@@ -1,0 +1,30 @@
+<div class="report-container">
+    <h2>Car Reservations</h2>
+  
+    <form [formGroup]="searchForm" class="filter-form">
+      <mat-form-field>
+        <mat-label>Select Customer</mat-label>
+        <mat-select formControlName="carId">
+          <mat-option *ngFor="let customer of customers" [value]="customer.id">
+            {{customer.name}}
+          </mat-option>
+        </mat-select>
+        <mat-hint>Select a Customer to view</mat-hint>
+      </mat-form-field>
+  
+      <button mat-raised-button color="primary" (click)="loadReport()">
+        Generate Report
+      </button>
+    </form>
+  
+    <mat-form-field class="filter-field">
+      <mat-label>Search</mat-label>
+      <input matInput (keyup)="applyFilter($event)" 
+             placeholder="Search by customer name, office location..." 
+             #input>
+      <mat-hint>Search across all fields</mat-hint>
+    </mat-form-field>
+  
+    <app-report-table [dataSource] = "dataSource" [report] = "'car-report'"></app-report-table>
+</div>
+  

@@ -123,6 +123,14 @@
     display: flex;
     gap: 8px;
     justify-content: flex-end;
+    width: 100%;
+}
+
+.car-button {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%
 }
 
 mat-card-actions {

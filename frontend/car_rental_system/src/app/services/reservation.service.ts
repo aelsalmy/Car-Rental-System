@@ -104,9 +104,38 @@ export class ReservationService {
             throw new Error('No authentication token found');
         }
 
-        let url = `${this.baseUrl}/reservations/report`;
+        let url = `${this.baseUrl}/reports`;
         const params = new URLSearchParams();
         
+        if (startDate) {
+            params.append('startDate', startDate);
+        }
+        if (endDate) {
+            params.append('endDate', endDate);
+        }
+
+        const queryString = params.toString();
+        if (queryString) {
+            url += `?${queryString}`;
+        }
+
+        return this.http.get(url + '/reservation', {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+    }
+
+    getCarReservationReport(carId?: number, startDate?: string, endDate?: string): Observable<any> {
+        const token = this.loginService.getToken();
+        if (!token) {
+            throw new Error('No authentication token found');
+        }
+
+        let url = `${this.baseUrl}/reports/car`;
+        const params = new URLSearchParams();
+        
+        if (carId) {
+            params.append('carId', carId.toString());
+        }
         if (startDate) {
             params.append('startDate', startDate);
         }
@@ -124,23 +153,29 @@ export class ReservationService {
         });
     }
 
-    getCarReservationReport(carId?: number, startDate?: string, endDate?: string): Observable<any> {
+    getAllCustomers(): Observable<any>{
+        const url = `${this.baseUrl}/reservations/customers`;
+        const token = this.loginService.getToken();
+        if (!token) {
+            throw new Error('No authentication token found');
+        }
+        const headers = new HttpHeaders({
+            'Authorization': `Bearer ${token}`
+        });
+        return this.http.get<any[]>(url, { headers });
+    }
+
+    getCustomerReport(customerId: any):Observable<any> {
         const token = this.loginService.getToken();
         if (!token) {
             throw new Error('No authentication token found');
         }
 
-        let url = `${this.baseUrl}/reservations/car-report`;
+        let url = `${this.baseUrl}/reports/customer`;
         const params = new URLSearchParams();
         
-        if (carId) {
-            params.append('carId', carId.toString());
-        }
-        if (startDate) {
-            params.append('startDate', startDate);
-        }
-        if (endDate) {
-            params.append('endDate', endDate);
+        if (customerId) {
+            params.append('customerId', customerId.toString());
         }
 
         const queryString = params.toString();

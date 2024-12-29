@@ -12,7 +12,7 @@ router.post('/', authenticateToken, async (req, res) => {           //route to i
 
         // Check if car exists and is available
         const car = await Car.findOne({
-            where: { id: carId, status: 'active' }
+            where: { id: carId }
         });
 
         if (!car) {
@@ -54,6 +54,7 @@ router.post('/', authenticateToken, async (req, res) => {           //route to i
         // Create reservation and payment record in a transaction
         const result = await sequelize.transaction(async (t) => {
             // Create the reservation
+
             const reservation = await Reservation.create({
                 carId,
                 customerId,
@@ -70,7 +71,7 @@ router.post('/', authenticateToken, async (req, res) => {           //route to i
                 paymentMethod,
                 paymentStatus
             }, { transaction: t });
-
+            console.log('Finished Transaction');
             return reservation;
         });
 
@@ -382,152 +383,15 @@ router.get('/search', authenticateAdmin, async (req, res) => {
     }
 });
 
-// Get detailed reservation report
-router.get('/report', authenticateAdmin, async (req, res) => {
+router.get('/customers', authenticateAdmin, async (req, res) => {
     try {
-        const { startDate, endDate } = req.query;
-        
-        const whereClause = {};
-        const conditions = [];
-
-        // Handle start date filtering
-        if (startDate) {
-            const start = new Date(startDate);
-            const startDateStr = start.toISOString().split('T')[0];
-            conditions.push(
-                Sequelize.where(
-                    Sequelize.fn('DATE', Sequelize.col('startDate')),
-                    '=',
-                    startDateStr
-                )
-            );
-        }
-
-        // Handle end date filtering
-        if (endDate) {
-            const end = new Date(endDate);
-            const endDateStr = end.toISOString().split('T')[0];
-            conditions.push(
-                Sequelize.where(
-                    Sequelize.fn('DATE', Sequelize.col('endDate')),
-                    '=',
-                    endDateStr
-                )
-            );
-        }
-
-        // Only add conditions if we have any
-        if (conditions.length > 0) {
-            whereClause[Op.and] = conditions;
-        }
-
-        const reservations = await Reservation.findAll({
-            where: whereClause,
-            include: [
-                {
-                    model: Car,
-                    include: [
-                        {
-                            model: Office,
-                            attributes: ['id', 'name', 'location', 'phone']
-                        }
-                    ],
-                    attributes: ['id', 'model', 'year', 'plateId', 'status', 'dailyRate', 'category', 'transmission', 'fuelType']
-                },
-                {
-                    model: Customer,
-                    attributes: ['id', 'name', 'email', 'phone', 'address']
-                },
-                {
-                    model: Payment,
-                    attributes: ['id', 'amount', 'paymentMethod', 'paymentStatus']
-                }
-            ],
-            attributes: ['id', 'carId', 'customerId', 'startDate', 'endDate', 'status', 'createdAt', 'updatedAt'],
-            order: [['startDate', 'DESC']]
+        const customers = await Customer.findAll({
+            order: [['createdAt', 'DESC']]
         });
-
-        res.json(reservations);
+        res.json(customers);
     } catch (error) {
-        console.error('Error generating reservation report:', error);
-        res.status(500).json({ message: 'Failed to generate report', error: error.message });
-    }
-});
-
-// Get car reservation report
-router.get('/car-report', authenticateAdmin, async (req, res) => {
-    try {
-        const { carId, startDate, endDate } = req.query;
-        
-        const whereClause = {};
-        const conditions = [];
-
-        // Always filter by car ID
-        if (carId) {
-            conditions.push({ carId: carId });
-        }
-
-        // Handle start date filtering
-        if (startDate) {
-            const start = new Date(startDate);
-            const startDateStr = start.toISOString().split('T')[0];
-            conditions.push(
-                Sequelize.where(
-                    Sequelize.fn('DATE', Sequelize.col('startDate')),
-                    '=',
-                    startDateStr
-                )
-            );
-        }
-
-        // Handle end date filtering
-        if (endDate) {
-            const end = new Date(endDate);
-            const endDateStr = end.toISOString().split('T')[0];
-            conditions.push(
-                Sequelize.where(
-                    Sequelize.fn('DATE', Sequelize.col('endDate')),
-                    '=',
-                    endDateStr
-                )
-            );
-        }
-
-        // Only add conditions if we have any
-        if (conditions.length > 0) {
-            whereClause[Op.and] = conditions;
-        }
-
-        const reservations = await Reservation.findAll({
-            where: whereClause,
-            include: [
-                {
-                    model: Car,
-                    include: [
-                        {
-                            model: Office,
-                            attributes: ['id', 'name', 'location', 'phone']
-                        }
-                    ],
-                    attributes: ['id', 'model', 'year', 'plateId', 'status', 'dailyRate', 'category', 'transmission', 'fuelType']
-                },
-                {
-                    model: Customer,
-                    attributes: ['id', 'name', 'email', 'phone', 'address']
-                },
-                {
-                    model: Payment,
-                    attributes: ['id', 'amount', 'paymentMethod', 'paymentStatus']
-                }
-            ],
-            attributes: ['id', 'carId', 'customerId', 'startDate', 'endDate', 'status', 'createdAt', 'updatedAt'],
-            order: [['startDate', 'DESC']]
-        });
-
-        res.json(reservations);
-    } catch (error) {
-        console.error('Error generating car reservation report:', error);
-        res.status(500).json({ message: 'Failed to generate report', error: error.message });
+        console.error('Error fetching all customers:', error);
+        res.status(500).json({ message: 'Failed to fetch customers' });
     }
 });
 

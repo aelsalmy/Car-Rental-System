@@ -11,6 +11,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ReservationService } from '../../services/reservation.service';
 import { MatTableDataSource } from '@angular/material/table';
+import { ReportTableComponent } from '../report-table/report-table.component';
 
 @Component({
   selector: 'app-reservation-report',
@@ -25,30 +26,15 @@ import { MatTableDataSource } from '@angular/material/table';
     MatDatepickerModule,
     MatNativeDateModule,
     MatButtonModule,
-    ReactiveFormsModule
+    ReactiveFormsModule,
+    ReportTableComponent
   ],
   templateUrl: './reservation-report.component.html',
   styleUrls: ['./reservation-report.component.css']
 })
 export class ReservationReportComponent implements OnInit {
-  displayedColumns: string[] = [
-    'startDate',
-    'endDate',
-    'carModel',
-    'carPlate',
-    'customerName',
-    'customerPhone',
-    'officeName',
-    'status',
-    'amount'
-  ];
-  
   dataSource: MatTableDataSource<any>;
   searchForm: FormGroup;
-
-  @ViewChild(MatPaginator) paginator!: MatPaginator;
-  @ViewChild(MatSort) sort!: MatSort;
-  @ViewChild(MatTable) table!: MatTable<any>;
 
   constructor(
     private reservationService: ReservationService,
@@ -88,11 +74,6 @@ export class ReservationReportComponent implements OnInit {
     this.loadReport();
   }
 
-  ngAfterViewInit() {
-    this.dataSource.paginator = this.paginator;
-    this.dataSource.sort = this.sort;
-  }
-
   loadReport() {
     const startDate = this.searchForm.get('startDate')?.value;
     const endDate = this.searchForm.get('endDate')?.value;
@@ -104,9 +85,6 @@ export class ReservationReportComponent implements OnInit {
     this.reservationService.getReservationReport(start, end).subscribe({
       next: (data) => {
         this.dataSource.data = data;
-        if (this.table) {
-          this.table.renderRows();
-        }
       },
       error: (error) => {
         console.error('Error loading report:', error);

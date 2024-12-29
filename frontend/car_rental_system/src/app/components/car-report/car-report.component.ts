@@ -1,8 +1,8 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { MatTableModule, MatTable } from '@angular/material/table';
-import { MatPaginatorModule, MatPaginator } from '@angular/material/paginator';
-import { MatSortModule, MatSort } from '@angular/material/sort';
+import { MatTableModule } from '@angular/material/table';
+import { MatPaginatorModule } from '@angular/material/paginator';
+import { MatSortModule } from '@angular/material/sort';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatDatepickerModule } from '@angular/material/datepicker';
@@ -14,6 +14,7 @@ import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ReservationService } from '../../services/reservation.service';
 import { CarService } from '../../services/car.service';
 import { MatTableDataSource } from '@angular/material/table';
+import { ReportTableComponent } from '../report-table/report-table.component';
 
 @Component({
   selector: 'app-car-report',
@@ -30,29 +31,17 @@ import { MatTableDataSource } from '@angular/material/table';
     MatButtonModule,
     MatSelectModule,
     ReactiveFormsModule,
-    MatIconModule
+    MatIconModule,
+    ReportTableComponent
   ],
   templateUrl: './car-report.component.html',
   styleUrls: ['./car-report.component.css']
 })
 export class CarReportComponent implements OnInit {
-  displayedColumns: string[] = [
-    'startDate',
-    'endDate',
-    'customerName',
-    'customerPhone',
-    'officeName',
-    'status',
-    'amount'
-  ];
-  
+
   dataSource: MatTableDataSource<any>;
   searchForm: FormGroup;
   cars: any[] = [];
-
-  @ViewChild(MatPaginator) paginator!: MatPaginator;
-  @ViewChild(MatSort) sort!: MatSort;
-  @ViewChild(MatTable) table!: MatTable<any>;
 
   constructor(
     private reservationService: ReservationService,
@@ -88,11 +77,7 @@ export class CarReportComponent implements OnInit {
 
   ngOnInit() {
     this.loadCars();
-  }
-
-  ngAfterViewInit() {
-    this.dataSource.paginator = this.paginator;
-    this.dataSource.sort = this.sort;
+    this.loadReport();
   }
 
   loadCars() {
@@ -118,9 +103,6 @@ export class CarReportComponent implements OnInit {
     this.reservationService.getCarReservationReport(carId, start, end).subscribe({
       next: (data) => {
         this.dataSource.data = data;
-        if (this.table) {
-          this.table.renderRows();
-        }
       },
       error: (error) => {
         console.error('Error loading report:', error);
