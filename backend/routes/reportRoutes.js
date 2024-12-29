@@ -156,48 +156,20 @@ router.get('/reservation', authenticateAdmin, async (req, res) => {
 
 router.get('/status', authenticateAdmin, async (req, res) => {
     try {
-        const { status, date } = req.query;
-        
-        const whereClause = {};
-        const conditions = [];
-
-        if (status) {
-            conditions.push({ status: 'active' });
-        }
-
-        // Handle start date filtering
-        if (date) {
-            const start = new Date(date);
-            const startDateStr = start.toISOString().split('T')[0];
-            conditions.push(
-                Sequelize.where(
-                    Sequelize.fn('DATE', Sequelize.col('startDate')),
-                    '<=',
-                    startDateStr
-                )
-            );
-            conditions.push(
-                Sequelize.where(
-                    Sequelize.fn('DATE', Sequelize.col('endDate')),
-                    '>=',
-                    startDateStr
-                )
-            );
-        }
-
-        // Only add conditions if we have any
-        if (conditions.length > 0) {
-            whereClause[Op.and] = conditions;
-        }
+        const { status } = req.query;
         
         let cars;
 
-        if(status == 'rented'){
+        if(status === 'rented'){
+            // For rented cars, get current active reservations with customer info
             cars = await Reservation.findAll({
-            where: whereClause,
-            include: [
+                where: {
+                    status: 'active'  // Only get active reservations
+                },
+                include: [
                     {
                         model: Car,
+                        where: { status: 'rented' },  // Only get rented cars
                         include: [
                             {
                                 model: Office,
@@ -208,79 +180,64 @@ router.get('/status', authenticateAdmin, async (req, res) => {
                     },
                     {
                         model: Customer,
-                        attributes: ['id', 'name' , 'phone']
+                        attributes: ['id', 'name', 'phone', 'email']
                     }
                 ],
-                attributes: ['carId' , 'customerId'],
-                order: [['startDate', 'DESC']]
+                attributes: ['id', 'carId', 'customerId', 'startDate', 'endDate']
+            });
+        } else if(status === 'out_of_service') {
+            // For out of service cars
+            cars = await Car.findAll({
+                where: { status: 'out_of_service' },
+                include: [
+                    {
+                        model: Office,
+                        attributes: ['id', 'name', 'location']
+                    }
+                ],
+                attributes: ['id', 'model', 'year', 'plateId', 'status', 'dailyRate', 'category']
+            });
+        } else if(status === 'active') {
+            // For active cars, get cars that are not in any active reservation
+            const activeReservations = await Reservation.findAll({
+                where: { status: 'active' },
+                attributes: ['carId']
+            });
+            
+            const rentedCarIds = activeReservations.map(r => r.carId);
+            
+            cars = await Car.findAll({
+                where: {
+                    status: 'active',
+                    id: {
+                        [Op.notIn]: rentedCarIds
+                    }
+                },
+                include: [
+                    {
+                        model: Office,
+                        attributes: ['id', 'name', 'location']
+                    }
+                ],
+                attributes: ['id', 'model', 'year', 'plateId', 'status', 'dailyRate', 'category']
+            });
+        } else {
+            // If no status specified, get all cars
+            cars = await Car.findAll({
+                include: [
+                    {
+                        model: Office,
+                        attributes: ['id', 'name', 'location']
+                    }
+                ],
+                attributes: ['id', 'model', 'year', 'plateId', 'status', 'dailyRate', 'category']
             });
         }
-        else{
-            if(status == 'out_of_service'){
-                cars = await Car.findAll({
-                    where: {status: status},
-                    include: {
-                        model: Office,
-                        attributes: ['id', 'name', 'location']
-                    },
-                    attributes: ['id', 'model', 'year', 'plateId', 'status', 'dailyRate', 'category']
-                });
-            } else {
-                if(status == 'active'){
-                    const rented = await Reservation.findAll({
-                    where: whereClause,
-                    include: [
-                            {
-                                model: Car,
-                                include: [
-                                    {
-                                        model: Office,
-                                        attributes: ['id', 'name', 'location']
-                                    }
-                                ],
-                                attributes: ['id', 'model', 'year', 'plateId', 'status', 'dailyRate', 'category']
-                            },
-                            {
-                                model: Customer,
-                                attributes: ['id', 'name' , 'phone']
-                            }
-                        ],
-                        attributes: ['carId' , 'customerId'],
-                        order: [['startDate', 'DESC']]
-                    });
 
-                    const rentedCarIds = rented.map((r) => r.carId);
-
-                    cars = await Car.findAll({
-                        where: {
-                            status: {
-                                [Op.not]: 'out_of_service',
-                            },
-                            id:{
-                                [Op.notIn]: rentedCarIds
-                            }
-                        },
-                        include: {
-                            model: Office,
-                            attributes: ['id', 'name', 'location']
-                        },
-                        attributes: ['id', 'model', 'year', 'plateId', 'status', 'dailyRate', 'category']
-                    });
-                }
-            }
-            if(!status){
-                cars = await Car.findAll({
-                    include: {
-                        model: Office,
-                        attributes: ['id', 'name', 'location']
-                    },
-                    attributes: ['id', 'model', 'year', 'plateId', 'status', 'dailyRate', 'category']
-                });
-            }
-        }
+        console.log('Status Report Response:', JSON.stringify(cars, null, 2));
         res.json(cars);
     } catch (error) {
-        console.error('Error generating car reservation report:', error);
+        console.error('Error generating car status report:', error);
         res.status(500).json({ message: 'Failed to generate report', error: error.message });
     }
 });

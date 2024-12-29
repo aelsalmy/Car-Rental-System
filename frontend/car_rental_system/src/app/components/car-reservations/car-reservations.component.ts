@@ -173,17 +173,4 @@ export class CarReservationsComponent implements OnInit {
             }
         });
     }
-
-    onDelete(reservationId: any) {
-        this.reservationService.deleteReservation(reservationId).subscribe({
-            next: () => {
-                this.snackBar.open('Reservation deleted successfully', 'Close', { duration: 3000 });
-                this.loadReservations();
-            },
-            error: (error) => {
-                console.error('Error deleting reservation:', error);
-                this.snackBar.open('Error deleting reservation', 'Close', { duration: 3000 });
-            }
-        });
-    }
 }

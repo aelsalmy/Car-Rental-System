@@ -4,14 +4,30 @@
   
   .date-filter-form {
     display: flex;
+    flex-direction: column;
     gap: 20px;
-    align-items: center;
     margin-bottom: 20px;
+  }
+  
+  .filters-row {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  
+  .buttons-row {
+    display: flex;
+    gap: 10px;
   }
   
   .filter-field {
     width: 100%;
     margin-bottom: 20px;
+  }
+  
+  h2 {
+    margin-bottom: 20px;
+    color: #1976d2;
   }
   
   .table-container {

@@ -1,7 +1,8 @@
 <div class="report-container">
-    <h2>Filter by Car Status</h2>
-  
-    <form [formGroup]="searchForm" class="filter-form">
+  <h2>Filter by Car Status</h2>
+
+  <form [formGroup]="searchForm" class="filter-form">
+    <div class="filters-row">
       <mat-form-field>
         <mat-label>Select Status</mat-label>
         <mat-select formControlName="carId">
@@ -11,27 +12,25 @@
         </mat-select>
         <mat-hint>Select status to view its cars</mat-hint>
       </mat-form-field>
-  
-      <mat-form-field>
-        <mat-label>Date</mat-label>
-        <input matInput [matDatepicker]="startPicker" formControlName="startDate">
-        <mat-datepicker-toggle matSuffix [for]="startPicker"></mat-datepicker-toggle>
-        <mat-datepicker #startPicker></mat-datepicker>
-        <mat-hint>Filter by exact date</mat-hint>
-      </mat-form-field>
-  
+    </div>
+
+    <div class="buttons-row">
       <button mat-raised-button color="primary" (click)="loadReport()">
         Generate Report
       </button>
-    </form>
-  
-    <mat-form-field class="filter-field">
-      <mat-label>Search</mat-label>
-      <input matInput (keyup)="applyFilter($event)" 
-             placeholder="Search by customer name, office location..." 
-             #input>
-      <mat-hint>Search across all fields</mat-hint>
-    </mat-form-field>
-  
-    <app-car-report-table [dataSource] = "dataSource" [status] = "statusParam"></app-car-report-table>
-  </div>
+      <button mat-raised-button color="accent" (click)="resetFilters()">
+        Reset Filters
+      </button>
+    </div>
+  </form>
+
+  <mat-form-field class="filter-field">
+    <mat-label>Search</mat-label>
+    <input matInput (keyup)="applyFilter($event)" 
+           placeholder="Search by customer name, office location..." 
+           #input>
+    <mat-hint>Search across all fields</mat-hint>
+  </mat-form-field>
+
+  <app-car-report-table [dataSource]="dataSource" [status]="statusParam"></app-car-report-table>
+</div>

@@ -1,4 +1,4 @@
-const { DataTypes } = require('sequelize');
+const { DataTypes, Op } = require('sequelize');
 const sequelize = require('../config/database');
 const { User } = require('./authModels');
 
@@ -135,15 +135,33 @@ const Reservation = sequelize.define('Reservation', {
     hooks: {
         beforeCreate: async (reservation) => {
             const car = await Car.findByPk(reservation.carId);
-            if (!car || car.status !== 'active') {
+            // Only check if car exists and is not out of service
+            if (!car || car.status === 'out_of_service') {
                 throw new Error('Car is not available for reservation');
             }
         },
         beforeUpdate: async (reservation) => {
             if (reservation.status === 'active') {
                 const car = await Car.findByPk(reservation.carId);
-                if (car && car.status !== 'active') {
-                    throw new Error('Cannot activate reservation - car is not available');
+                if (!car) {
+                    throw new Error('Car not found');
+                }
+
+                // Only check for overlapping active reservations
+                const overlapping = await Reservation.findOne({
+                    where: {
+                        carId: reservation.carId,
+                        status: 'active',
+                        id: { [Op.ne]: reservation.id },
+                        [Op.or]: [
+                            { startDate: { [Op.between]: [reservation.startDate, reservation.endDate] } },
+                            { endDate: { [Op.between]: [reservation.startDate, reservation.endDate] } }
+                        ]
+                    }
+                });
+
+                if (overlapping) {
+                    throw new Error('Cannot activate reservation - there is an overlapping active reservation');
                 }
             }
         }

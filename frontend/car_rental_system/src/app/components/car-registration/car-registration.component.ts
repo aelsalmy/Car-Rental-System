@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, Output, EventEmitter } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -73,6 +73,8 @@ export class CarRegistrationComponent {
         'Towing Package'
     ];
 
+    @Output() registrationSuccess = new EventEmitter<void>();
+
     constructor(
         private fb: FormBuilder,
         private carService: CarService,
@@ -112,7 +114,6 @@ export class CarRegistrationComponent {
 
     async onSubmit() {
         if (this.carForm.valid) {
-            console.log('Form values:', this.carForm.value);
             try {
                 const formData = {
                     ...this.carForm.value,
@@ -132,6 +133,7 @@ export class CarRegistrationComponent {
                     duration: 3000,
                 });
                 this.carForm.reset();
+                this.registrationSuccess.emit(); // Emit event on success
             } catch (error: any) {
                 console.error('Error submitting form:', error);
                 this.snackBar.open(error.error?.message || 'Error registering car', 'Close', {

@@ -3,54 +3,52 @@
       <!-- Start Date Column -->
       <ng-container matColumnDef="carModel">
         <th mat-header-cell *matHeaderCellDef mat-sort-header> Car Model </th>
-        <td mat-cell *matCellDef="let row"> {{status == 'rented'? row.Car.model : row.model}} </td>
+        <td mat-cell *matCellDef="let row"> {{status === 'rented' ? row.Car?.model : row.model}} </td>
       </ng-container>
 
       <!-- Car Model Column -->
       <ng-container matColumnDef="modelYear">
         <th mat-header-cell *matHeaderCellDef mat-sort-header> Model Year </th>
         <td mat-cell *matCellDef="let row"> 
-            {{status == 'rented'?row.Car.year:row.year}}
+            {{status === 'rented' ? row.Car?.year : row.year}}
         </td>
       </ng-container>
 
       <!-- Car Plate Column -->
       <ng-container matColumnDef="carPlate">
         <th mat-header-cell *matHeaderCellDef mat-sort-header> Plate ID </th>
-        <td mat-cell *matCellDef="let row"> {{status == 'rented'?row.Car.plateId:row.plateId}} </td>
+        <td mat-cell *matCellDef="let row"> {{status === 'rented' ? row.Car?.plateId : row.plateId}} </td>
       </ng-container>
 
       <!-- Customer Name Column -->
       <ng-container matColumnDef="customerName">
         <th mat-header-cell *matHeaderCellDef mat-sort-header> Customer Name </th>
         <td mat-cell *matCellDef="let row"> 
-            {{status == 'rented'?row.Customer.name:'N/A'}}
-          <div class="customer-email" *ngIf = "row.status == 'rented'">{{row.Customer?.email}}</div>
+            {{status === 'rented' && row.Customer ? row.Customer.name : 'N/A'}}
+            <div class="customer-email" *ngIf="status === 'rented' && row.Customer">{{row.Customer.email}}</div>
         </td>
       </ng-container>
 
       <!-- Customer Phone Column -->
       <ng-container matColumnDef="customerPhone">
         <th mat-header-cell *matHeaderCellDef mat-sort-header> Customer Phone </th>
-        <td mat-cell *matCellDef="let row"> {{status == 'rented'? row.Customer.phone : 'N/A'}} </td>
+        <td mat-cell *matCellDef="let row"> {{status === 'rented' && row.Customer ? row.Customer.phone : 'N/A'}} </td>
       </ng-container>
 
       <!-- Office Name Column -->
       <ng-container matColumnDef="officeName">
         <th mat-header-cell *matHeaderCellDef mat-sort-header> Office </th>
         <td mat-cell *matCellDef="let row"> 
-            {{status == 'rented'? row.Car.Office.name: row.Office.name}}
-          <div class="office-location">{{status == 'rented'? row.Car.Office.location: row.Office.location}}</div>
+            {{status === 'rented' ? row.Car?.Office?.name : row.Office?.name}}
+          <div class="office-location">{{status === 'rented' ? row.Car?.Office?.location : row.Office?.location}}</div>
         </td>
       </ng-container>
-
-      
 
       <!-- Status Column -->
       <ng-container matColumnDef="status">
         <th mat-header-cell *matHeaderCellDef mat-sort-header> Status </th>
         <td mat-cell *matCellDef="let row"> 
-          <span class="status-badge {{status == ''? row.status : status}}">{{status == ''? row.status : status}}</span>
+          <span class="status-badge {{status === '' ? row.status : status}}">{{status === '' ? row.status : status}}</span>
         </td>
       </ng-container>
 

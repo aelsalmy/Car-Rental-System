@@ -23,13 +23,21 @@ router.post('/', authenticateToken, async (req, res) => {           //route to i
         const overlapping = await Reservation.findOne({
             where: {
                 carId,
-                status: ['pending', 'active'],
+                status: {
+                    [Op.notIn]: ['cancelled', 'completed']
+                },
                 [Op.or]: [
                     {
                         startDate: { [Op.between]: [startDate, endDate] }
                     },
                     {
                         endDate: { [Op.between]: [startDate, endDate] }
+                    },
+                    {
+                        [Op.and]: [
+                            { startDate: { [Op.lte]: startDate } },
+                            { endDate: { [Op.gte]: endDate } }
+                        ]
                     }
                 ]
             }
