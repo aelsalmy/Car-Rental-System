@@ -6,7 +6,7 @@ const carRoutes = require('./routes/carRoutes.js')
 const officeRoutes = require('./routes/officeRoutes.js')
 const reservationRoutes = require('./routes/reservationRoutes.js')
 const reportRoutes = require('./routes/reportRoutes.js')
-const sequelize = require('./config/database')
+const pool = require('./config/database')
 const cors = require('cors')
 
 const app = express()
@@ -22,18 +22,22 @@ app.use('/api/auth', loginRoutes)
 app.use('/api/cars', carRoutes)
 app.use('/api/offices', officeRoutes)
 app.use('/api/reservations', reservationRoutes)
-app.use('/api/reports' , reportRoutes)
+app.use('/api/reports', reportRoutes)
 
 console.log('JWT_SECRET loaded:', !!process.env.JWT_SECRET);
 
-// Sync database without dropping tables
-sequelize.sync({ alter: true, logging: false })
-    .then(() => {
-        console.log('Database synchronized successfully')
+// Test database connection
+pool.getConnection()
+    .then(connection => {
+        console.log('Database connection established successfully');
+        connection.release();
+        
+        // Start the server after confirming database connection
         app.listen(process.env.PORT, () => {
             console.log('Server Listening to port: ' + process.env.PORT)
-        })
+        });
     })
-    .catch((err) => {
-        console.error('Error during database synchronization:', err)
+    .catch(err => {
+        console.error('Error connecting to the database:', err);
+        process.exit(1);
     });

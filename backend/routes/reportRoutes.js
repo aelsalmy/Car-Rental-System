@@ -1,550 +1,466 @@
 const express = require('express');
 const router = express.Router();
-const { Car, Reservation, Office, Customer, Payment } = require('../models/carModels');
-const { authenticateToken , authenticateAdmin} = require('../middleware/auth');
-const sequelize = require('../config/database');
-const { Op, Sequelize } = require('sequelize');
+const pool = require('../config/database');
+const { authenticateToken, authenticateAdmin } = require('../middleware/auth');
 
 // Get car reservation report
 router.get('/car', authenticateAdmin, async (req, res) => {
+    const connection = await pool.getConnection();
     try {
         const { carId, startDate, endDate } = req.query;
         
-        const whereClause = {};
-        const conditions = [];
+        let query = `
+            SELECT 
+                r.id, r.carId, r.customerId, r.startDate, r.endDate, r.status, r.createdAt, r.updatedAt,
+                c.model, c.year, c.plateId, c.status as carStatus, c.dailyRate, c.category, c.transmission, c.fuelType,
+                o.id as officeId, o.name as officeName, o.location as officeLocation, o.phone as officePhone,
+                cust.id as customerId, cust.name as customerName, cust.email as customerEmail, cust.phone as customerPhone, cust.address as customerAddress,
+                p.id as paymentId, p.amount as paymentAmount, p.paymentMethod, p.paymentStatus
+            FROM reservations r
+            LEFT JOIN cars c ON r.carId = c.id
+            LEFT JOIN offices o ON c.officeId = o.id
+            LEFT JOIN customers cust ON r.customerId = cust.id
+            LEFT JOIN payments p ON r.id = p.reservationId
+            WHERE 1=1
+        `;
 
-        // Always filter by car ID
+        const params = [];
+
         if (carId) {
-            conditions.push({ carId: carId });
+            query += ' AND r.carId = ?';
+            params.push(carId);
         }
 
-        // Handle start date filtering
         if (startDate) {
-            const start = new Date(startDate);
-            const startDateStr = start.toISOString().split('T')[0];
-            conditions.push(
-                Sequelize.where(
-                    Sequelize.fn('DATE', Sequelize.col('startDate')),
-                    '=',
-                    startDateStr
-                )
-            );
+            query += ' AND DATE(r.startDate) = ?';
+            params.push(startDate.split('T')[0]);
         }
 
-        // Handle end date filtering
         if (endDate) {
-            const end = new Date(endDate);
-            const endDateStr = end.toISOString().split('T')[0];
-            conditions.push(
-                Sequelize.where(
-                    Sequelize.fn('DATE', Sequelize.col('endDate')),
-                    '=',
-                    endDateStr
-                )
-            );
+            query += ' AND DATE(r.endDate) = ?';
+            params.push(endDate.split('T')[0]);
         }
 
-        // Only add conditions if we have any
-        if (conditions.length > 0) {
-            whereClause[Op.and] = conditions;
-        }
+        query += ' ORDER BY r.startDate DESC';
 
-        const reservations = await Reservation.findAll({
-            where: whereClause,
-            include: [
-                {
-                    model: Car,
-                    include: [
-                        {
-                            model: Office,
-                            attributes: ['id', 'name', 'location', 'phone']
-                        }
-                    ],
-                    attributes: ['id', 'model', 'year', 'plateId', 'status', 'dailyRate', 'category', 'transmission', 'fuelType']
-                },
-                {
-                    model: Customer,
-                    attributes: ['id', 'name', 'email', 'phone', 'address']
-                },
-                {
-                    model: Payment,
-                    attributes: ['id', 'amount', 'paymentMethod', 'paymentStatus']
+        const [reservations] = await connection.query(query, params);
+
+        // Transform the flat results into nested objects
+        const formattedReservations = reservations.map(row => ({
+            id: row.id,
+            carId: row.carId,
+            customerId: row.customerId,
+            startDate: row.startDate,
+            endDate: row.endDate,
+            status: row.status,
+            createdAt: row.createdAt,
+            updatedAt: row.updatedAt,
+            Car: {
+                id: row.carId,
+                model: row.model,
+                year: row.year,
+                plateId: row.plateId,
+                status: row.carStatus,
+                dailyRate: row.dailyRate,
+                category: row.category,
+                transmission: row.transmission,
+                fuelType: row.fuelType,
+                Office: {
+                    id: row.officeId,
+                    name: row.officeName,
+                    location: row.officeLocation,
+                    phone: row.officePhone
                 }
-            ],
-            attributes: ['id', 'carId', 'customerId', 'startDate', 'endDate', 'status', 'createdAt', 'updatedAt'],
-            order: [['startDate', 'DESC']]
-        });
+            },
+            Customer: {
+                id: row.customerId,
+                name: row.customerName,
+                email: row.customerEmail,
+                phone: row.customerPhone,
+                address: row.customerAddress
+            },
+            Payment: {
+                id: row.paymentId,
+                amount: row.paymentAmount,
+                paymentMethod: row.paymentMethod,
+                paymentStatus: row.paymentStatus
+            }
+        }));
 
-        res.json(reservations);
+        res.json(formattedReservations);
     } catch (error) {
         console.error('Error generating car reservation report:', error);
         res.status(500).json({ message: 'Failed to generate report', error: error.message });
+    } finally {
+        connection.release();
     }
 });
 
 // Get detailed reservation report
 router.get('/reservation', authenticateAdmin, async (req, res) => {
+    const connection = await pool.getConnection();
     try {
         const { startDate, endDate } = req.query;
         
-        const whereClause = {};
-        const conditions = [];
+        let query = `
+            SELECT 
+                r.id, r.carId, r.customerId, r.startDate, r.endDate, r.status, r.createdAt, r.updatedAt,
+                c.model, c.year, c.plateId, c.status as carStatus, c.dailyRate, c.category, c.transmission, c.fuelType,
+                o.id as officeId, o.name as officeName, o.location as officeLocation, o.phone as officePhone,
+                cust.id as customerId, cust.name as customerName, cust.email as customerEmail, cust.phone as customerPhone, cust.address as customerAddress,
+                p.id as paymentId, p.amount as paymentAmount, p.paymentMethod, p.paymentStatus
+            FROM reservations r
+            LEFT JOIN cars c ON r.carId = c.id
+            LEFT JOIN offices o ON c.officeId = o.id
+            LEFT JOIN customers cust ON r.customerId = cust.id
+            LEFT JOIN payments p ON r.id = p.reservationId
+            WHERE 1=1
+        `;
 
-        // Handle start date filtering
+        const params = [];
+
         if (startDate) {
-            const start = new Date(startDate);
-            const startDateStr = start.toISOString().split('T')[0];
-            conditions.push(
-                Sequelize.where(
-                    Sequelize.fn('DATE', Sequelize.col('startDate')),
-                    '=',
-                    startDateStr
-                )
-            );
+            query += ' AND DATE(r.startDate) = ?';
+            params.push(startDate.split('T')[0]);
         }
 
-        // Handle end date filtering
         if (endDate) {
-            const end = new Date(endDate);
-            const endDateStr = end.toISOString().split('T')[0];
-            conditions.push(
-                Sequelize.where(
-                    Sequelize.fn('DATE', Sequelize.col('endDate')),
-                    '=',
-                    endDateStr
-                )
-            );
+            query += ' AND DATE(r.endDate) = ?';
+            params.push(endDate.split('T')[0]);
         }
 
-        // Only add conditions if we have any
-        if (conditions.length > 0) {
-            whereClause[Op.and] = conditions;
-        }
+        query += ' ORDER BY r.startDate DESC';
 
-        const reservations = await Reservation.findAll({
-            where: whereClause,
-            include: [
-                {
-                    model: Car,
-                    include: [
-                        {
-                            model: Office,
-                            attributes: ['id', 'name', 'location', 'phone']
-                        }
-                    ],
-                    attributes: ['id', 'model', 'year', 'plateId', 'status', 'dailyRate', 'category', 'transmission', 'fuelType']
-                },
-                {
-                    model: Customer,
-                    attributes: ['id', 'name', 'email', 'phone', 'address']
-                },
-                {
-                    model: Payment,
-                    attributes: ['id', 'amount', 'paymentMethod', 'paymentStatus']
+        const [reservations] = await connection.query(query, params);
+
+        // Transform the flat results into nested objects
+        const formattedReservations = reservations.map(row => ({
+            id: row.id,
+            carId: row.carId,
+            customerId: row.customerId,
+            startDate: row.startDate,
+            endDate: row.endDate,
+            status: row.status,
+            createdAt: row.createdAt,
+            updatedAt: row.updatedAt,
+            Car: {
+                id: row.carId,
+                model: row.model,
+                year: row.year,
+                plateId: row.plateId,
+                status: row.carStatus,
+                dailyRate: row.dailyRate,
+                category: row.category,
+                transmission: row.transmission,
+                fuelType: row.fuelType,
+                Office: {
+                    id: row.officeId,
+                    name: row.officeName,
+                    location: row.officeLocation,
+                    phone: row.officePhone
                 }
-            ],
-            attributes: ['id', 'carId', 'customerId', 'startDate', 'endDate', 'status', 'createdAt', 'updatedAt'],
-            order: [['startDate', 'DESC']]
-        });
+            },
+            Customer: {
+                id: row.customerId,
+                name: row.customerName,
+                email: row.customerEmail,
+                phone: row.customerPhone,
+                address: row.customerAddress
+            },
+            Payment: {
+                id: row.paymentId,
+                amount: row.paymentAmount,
+                paymentMethod: row.paymentMethod,
+                paymentStatus: row.paymentStatus
+            }
+        }));
 
-        res.json(reservations);
+        res.json(formattedReservations);
     } catch (error) {
         console.error('Error generating reservation report:', error);
         res.status(500).json({ message: 'Failed to generate report', error: error.message });
+    } finally {
+        connection.release();
     }
 });
 
 router.get('/status', authenticateAdmin, async (req, res) => {
+    const connection = await pool.getConnection();
     try {
         const { status, date } = req.query;
-        
-        const whereClause = {};
-        const conditions = [];
-
-        if (status) {
-            conditions.push({ status: 'active' });
-        }
-
-        // Handle start date filtering
-        if (date) {
-            const start = new Date(date);
-            const startDateStr = start.toISOString().split('T')[0];
-
-            conditions.push(
-                Sequelize.where(
-                    Sequelize.fn('DATE', Sequelize.col('startDate')),
-                    '<=',
-                    startDateStr
-                )
-            );
-
-            conditions.push(
-                Sequelize.where(
-                    Sequelize.fn('DATE', Sequelize.col('endDate')),
-                    '>=',
-                    startDateStr
-                )
-            );
-        }
-        // Only add conditions if we have any
-        if (conditions.length > 0) {
-            whereClause[Op.and] = conditions;
-        }
-
-        let cars;
         const carMap = new Map();
 
-        if(status == 'rented'){
-            const rented = await Reservation.findAll({
-            where: whereClause,
-            include: [
-                    {
-                        model: Car,
-                        include: [
-                            {
-                                model: Office,
-                                attributes: ['id', 'name', 'location']
-                            }
-                        ],
-                        attributes: ['id', 'model', 'year', 'plateId', 'status', 'dailyRate', 'category']
-                    },
-                    {
-                        model: Customer,
-                        attributes: ['id', 'name', 'phone', 'email']
-                    }
-                ],
-                attributes: ['id', 'carId', 'customerId', 'startDate', 'endDate']
-            });
+        if (status === 'rented') {
+            let query = `
+                SELECT 
+                    r.id as reservationId, r.startDate, r.endDate, r.status as reservationStatus,
+                    c.*, 
+                    o.id as officeId, o.name as officeName, o.location as officeLocation, o.phone as officePhone
+                FROM reservations r
+                JOIN cars c ON r.carId = c.id
+                LEFT JOIN offices o ON c.officeId = o.id
+                WHERE r.status = 'active'
+            `;
 
-            rented.forEach((item) => {
-                const carData = {
-                    carId: item.Car?.id || null,
-                    model: item.Car?.model || null,
-                    year: item.Car?.year || null,
+            const params = [];
+
+            if (date) {
+                query += ` AND DATE(?) BETWEEN DATE(r.startDate) AND DATE(r.endDate)`;
+                params.push(date);
+            }
+
+            const [rentedCars] = await connection.query(query, params);
+
+            rentedCars.forEach(car => {
+                carMap.set(car.id, {
+                    id: car.id,
+                    model: car.model,
+                    year: car.year,
+                    plateId: car.plateId,
                     status: 'rented',
-                    plateId: item.Car?.plateId || null,
-                    officeName: item.Car?.Office?.name || null,
-                    officeLocation: item.Car?.Office?.location || null,
-                    customerName: item.Customer?.name || null,
-                    customerPhone: item.Customer?.phone || null,
-                    customerEmail: item.Customer?.email || null
-                };
-            
-                if (carData.carId) {
-                    carMap.set(carData.carId, carData);
-                }
+                    dailyRate: car.dailyRate,
+                    category: car.category,
+                    transmission: car.transmission,
+                    fuelType: car.fuelType,
+                    Office: {
+                        id: car.officeId,
+                        name: car.officeName,
+                        location: car.officeLocation,
+                        phone: car.officePhone
+                    },
+                    currentReservation: {
+                        id: car.reservationId,
+                        startDate: car.startDate,
+                        endDate: car.endDate,
+                        status: car.reservationStatus
+                    }
+                });
             });
+        } else if (status === 'out_of_service') {
+            const [outOfServiceCars] = await connection.query(`
+                SELECT c.*, 
+                    o.id as officeId, o.name as officeName, o.location as officeLocation, o.phone as officePhone
+                FROM cars c
+                LEFT JOIN offices o ON c.officeId = o.id
+                WHERE c.status = ?
+            `, [status]);
 
+            outOfServiceCars.forEach(car => {
+                carMap.set(car.id, {
+                    id: car.id,
+                    model: car.model,
+                    year: car.year,
+                    plateId: car.plateId,
+                    status: car.status,
+                    dailyRate: car.dailyRate,
+                    category: car.category,
+                    transmission: car.transmission,
+                    fuelType: car.fuelType,
+                    Office: {
+                        id: car.officeId,
+                        name: car.officeName,
+                        location: car.officeLocation,
+                        phone: car.officePhone
+                    }
+                });
+            });
         } else {
-            if(status == 'out_of_service'){
-                const outOfService = await Car.findAll({
-                    where: {status: status},
-                    include: {
-                        model: Office,
-                        attributes: ['id', 'name', 'location']
-                    },
-                    attributes: ['id', 'model', 'year', 'plateId', 'status', 'dailyRate', 'category']
-                });
+            // Get all cars if no specific status is provided
+            let query = `
+                SELECT DISTINCT
+                    c.*,
+                    o.id as officeId, o.name as officeName, o.location as officeLocation, o.phone as officePhone,
+                    r.id as reservationId, r.startDate, r.endDate, r.status as reservationStatus
+                FROM cars c
+                LEFT JOIN offices o ON c.officeId = o.id
+                LEFT JOIN reservations r ON c.id = r.carId AND r.status = 'active'
+            `;
 
-                outOfService.forEach((item) => {
-                    const carData = {
-                        carId: item.id || null,
-                        model: item.model || null,
-                        year: item.year || null,
-                        status: 'out_of_service',
-                        plateId: item.plateId || null,
-                        officeName: item.Office?.name || null,
-                        officeLocation: item.Office?.location || null,
-                        customerName: null, 
-                        customerPhone: null,
-                        customerEmail: null
-                    };
-                
-                    if (carData.carId && !carMap.has(carData.carId)) {
-                        carMap.set(carData.carId, carData);
-                    }
-                });
-            } else {
-                if(status == 'active'){
-                    const rented = await Reservation.findAll({
-                    where: whereClause,
-                    include: [
-                            {
-                                model: Car,
-                                include: [
-                                    {
-                                        model: Office,
-                                        attributes: ['id', 'name', 'location']
-                                    }
-                                ],
-                                attributes: ['id', 'model', 'year', 'plateId', 'status', 'dailyRate', 'category']
-                            },
-                            {
-                                model: Customer,
-                                attributes: ['id', 'name' , 'phone' , 'email']
-                            }
-                        ],
-                        attributes: ['id', 'carId', 'customerId', 'startDate', 'endDate'],
-                        order: [['startDate', 'DESC']]
-                    });
+            const params = [];
 
-                    const rentedCarIds = rented.map((r) => r.carId);
-
-                    const active = await Car.findAll({
-                        where: {
-                            status: {
-                                [Op.not]: 'out_of_service',
-                            },
-                            id:{
-                                [Op.notIn]: rentedCarIds
-                            }
-                        },
-                        include: {
-                            model: Office,
-                            attributes: ['id', 'name', 'location']
-                        },
-                        attributes: ['id', 'model', 'year', 'plateId', 'status', 'dailyRate', 'category']
-                    });
-
-                    active.forEach((item) => {
-                        const carData = {
-                            carId: item.id || null,
-                            model: item.model || null,
-                            year: item.year || null,
-                            status: 'active',
-                            plateId: item.plateId || null,
-                            officeName: item.Office?.name || null,
-                            officeLocation: item.Office?.location || null,
-                            customerName: null, 
-                            customerPhone: null,
-                            customerEmail: null
-                        };
-                    
-                        if (carData.carId && !carMap.has(carData.carId)) {
-                            carMap.set(carData.carId, carData);
-                        }
-                    });
-                }
+            if (date) {
+                query += ` AND (r.id IS NULL OR (DATE(?) BETWEEN DATE(r.startDate) AND DATE(r.endDate)))`;
+                params.push(date);
             }
-            //if no status defined get all cars
-            if(!status){
-                const rented = await Reservation.findAll({
-                    where: whereClause,
-                    include: [
-                            {
-                            where: {status: 'active'},
-                            model: Car,
-                            include: [
-                                {
-                                    model: Office,
-                                    attributes: ['id', 'name', 'location']
-                                }
-                            ],
-                            attributes: ['id', 'model', 'year', 'plateId', 'status', 'dailyRate', 'category']
-                        },
-                        {
-                            model: Customer,
-                            attributes: ['id', 'name' , 'phone']
-                        }
-                    ],
-                    attributes: ['carId' , 'customerId'],
-                    order: [['startDate', 'DESC']]
-                });
 
-                const others = await Car.findAll({
-                    include: {
-                        model: Office,
-                        attributes: ['id', 'name', 'location']
+            const [allCars] = await connection.query(query, params);
+
+            allCars.forEach(car => {
+                carMap.set(car.id, {
+                    id: car.id,
+                    model: car.model,
+                    year: car.year,
+                    plateId: car.plateId,
+                    status: car.reservationId ? 'rented' : car.status,
+                    dailyRate: car.dailyRate,
+                    category: car.category,
+                    transmission: car.transmission,
+                    fuelType: car.fuelType,
+                    Office: {
+                        id: car.officeId,
+                        name: car.officeName,
+                        location: car.officeLocation,
+                        phone: car.officePhone
                     },
-                    attributes: ['id', 'model', 'year', 'plateId', 'status', 'dailyRate', 'category']
+                    ...(car.reservationId && {
+                        currentReservation: {
+                            id: car.reservationId,
+                            startDate: car.startDate,
+                            endDate: car.endDate,
+                            status: car.reservationStatus
+                        }
+                    })
                 });
-
-                rented.forEach((item) => {
-                    const carData = {
-                        carId: item.Car?.id || null,
-                        model: item.Car?.model || null,
-                        year: item.Car?.year || null,
-                        status: 'rented',
-                        plateId: item.Car?.plateId || null,
-                        officeName: item.Car?.Office?.name || null,
-                        officeLocation: item.Car?.Office?.location || null,
-                        customerName: item.Customer?.name || null,
-                        customerPhone: item.Customer?.phone || null,
-                        customerEmail: item.Customer?.email || null
-                    };
-                
-                    if (carData.carId) {
-                        carMap.set(carData.carId, carData);
-                    }
-                });
-                
-                others.forEach((item) => {
-                    const carData = {
-                        carId: item.id || null,
-                        model: item.model || null,
-                        year: item.year || null,
-                        status: item.status == 'out_of_service'?'out_of_service':'active',
-                        plateId: item.plateId || null,
-                        officeName: item.Office?.name || null,
-                        officeLocation: item.Office?.location || null,
-                        customerName: null, 
-                        customerPhone: null,
-                        customerEmail: null
-                    };
-                
-                    if (carData.carId && !carMap.has(carData.carId)) {
-                        carMap.set(carData.carId, carData);
-                    }
-                });
-                
-                
-            }
+            });
         }
 
-        cars = Array.from(carMap.values()); 
+        const cars = Array.from(carMap.values());
         res.json(cars);
     } catch (error) {
         console.error('Error generating car status report:', error);
         res.status(500).json({ message: 'Failed to generate report', error: error.message });
+    } finally {
+        connection.release();
     }
 });
 
-router.get('/customer' , authenticateAdmin , async (req , res) => {
+router.get('/customer', authenticateAdmin, async (req, res) => {
+    const connection = await pool.getConnection();
     try {
         const { customerId } = req.query;
 
-        let customerReservations;
+        let query = `
+            SELECT 
+                r.id, r.carId, r.customerId, r.startDate, r.endDate, r.status, r.createdAt, r.updatedAt,
+                c.model, c.year, c.plateId, c.status as carStatus, c.dailyRate, c.category, c.transmission, c.fuelType,
+                o.id as officeId, o.name as officeName, o.location as officeLocation, o.phone as officePhone,
+                cust.id as customerId, cust.name as customerName, cust.email as customerEmail, cust.phone as customerPhone, cust.address as customerAddress,
+                p.id as paymentId, p.amount as paymentAmount, p.paymentMethod, p.paymentStatus
+            FROM reservations r
+            LEFT JOIN cars c ON r.carId = c.id
+            LEFT JOIN offices o ON c.officeId = o.id
+            LEFT JOIN customers cust ON r.customerId = cust.id
+            LEFT JOIN payments p ON r.id = p.reservationId
+            WHERE r.customerId = ?
+            ORDER BY r.startDate DESC
+        `;
 
-        if(customerId){
-            customerReservations = await Reservation.findAll({
-                where:{
-                    customerId: customerId
-                },
-                include: [
-                    {
-                        model: Car,
-                        include: [
-                            {
-                                model: Office,
-                                attributes: ['id', 'name', 'location', 'phone']
-                            }
-                        ],
-                        attributes: ['id', 'model', 'year', 'plateId', 'status', 'dailyRate', 'category', 'transmission', 'fuelType']
-                    },
-                    {
-                        model: Customer,
-                        attributes: ['id', 'name', 'email', 'phone', 'address']
-                    },
-                    {
-                        model: Payment,
-                        attributes: ['id', 'amount', 'paymentMethod', 'paymentStatus']
-                    }
-                ]
-            });
-        }
-        else {
-            customerReservations = await Reservation.findAll({
-                include: [
-                    {
-                        model: Car,
-                        include: [
-                            {
-                                model: Office,
-                                attributes: ['id', 'name', 'location', 'phone']
-                            }
-                        ],
-                        attributes: ['id', 'model', 'year', 'plateId', 'status', 'dailyRate', 'category', 'transmission', 'fuelType']
-                    },
-                    {
-                        model: Customer,
-                        attributes: ['id', 'name', 'email', 'phone', 'address']
-                    },
-                    {
-                        model: Payment,
-                        attributes: ['id', 'amount', 'paymentMethod', 'paymentStatus']
-                    }
-                ]
-            });
-        }
-        
-        res.json(customerReservations);
+        const [reservations] = await connection.query(query, [customerId]);
+
+        // Transform the flat results into nested objects
+        const formattedReservations = reservations.map(row => ({
+            id: row.id,
+            carId: row.carId,
+            customerId: row.customerId,
+            startDate: row.startDate,
+            endDate: row.endDate,
+            status: row.status,
+            createdAt: row.createdAt,
+            updatedAt: row.updatedAt,
+            Car: {
+                id: row.carId,
+                model: row.model,
+                year: row.year,
+                plateId: row.plateId,
+                status: row.carStatus,
+                dailyRate: row.dailyRate,
+                category: row.category,
+                transmission: row.transmission,
+                fuelType: row.fuelType,
+                Office: {
+                    id: row.officeId,
+                    name: row.officeName,
+                    location: row.officeLocation,
+                    phone: row.officePhone
+                }
+            },
+            Customer: {
+                id: row.customerId,
+                name: row.customerName,
+                email: row.customerEmail,
+                phone: row.customerPhone,
+                address: row.customerAddress
+            },
+            Payment: {
+                id: row.paymentId,
+                amount: row.paymentAmount,
+                paymentMethod: row.paymentMethod,
+                paymentStatus: row.paymentStatus
+            }
+        }));
+
+        res.json(formattedReservations);
     } catch (error) {
-        console.error('Error generating car status report:', error);
+        console.error('Error generating customer report:', error);
         res.status(500).json({ message: 'Failed to generate report', error: error.message });
+    } finally {
+        connection.release();
     }
 });
 
-router.get('/payment' , authenticateAdmin , async (req,res) => {
+router.get('/payment', authenticateAdmin, async (req, res) => {
+    const connection = await pool.getConnection();
     try {
-        const { startDate , endDate } = req.query;
+        const { startDate, endDate } = req.query;
 
-        let payments;
+        let query = `
+            SELECT 
+                p.id, p.amount, p.paymentMethod, p.paymentStatus, p.updatedAt,
+                r.id as reservationId, r.startDate, r.endDate,
+                c.model, c.year, c.plateId,
+                cust.id as customerId, cust.name as customerName, cust.phone as customerPhone, cust.email as customerEmail
+            FROM payments p
+            JOIN reservations r ON p.reservationId = r.id
+            JOIN cars c ON r.carId = c.id
+            JOIN customers cust ON r.customerId = cust.id
+            WHERE p.paymentStatus = 'paid'
+        `;
 
-        const whereClause = {};
-        const conditions = [];
+        const params = [];
 
-        // Handle start date filtering
         if (startDate) {
-            const start = new Date(startDate);
-            const startDateStr = start.toISOString().split('T')[0];
-            conditions.push(
-                Sequelize.where(
-                    Sequelize.fn('DATE', Sequelize.col('Payment.updatedAt')),
-                    '>=',
-                    startDateStr
-                )
-            );
+            query += ' AND DATE(p.updatedAt) >= ?';
+            params.push(startDate.split('T')[0]);
         }
 
-        // Handle end date filtering
         if (endDate) {
-            const end = new Date(endDate);
-            const endDateStr = end.toISOString().split('T')[0];
-            conditions.push(
-                Sequelize.where(
-                    Sequelize.fn('DATE', Sequelize.col('Payment.updatedAt')),
-                    '<=',
-                    endDateStr
-                )
-            );
+            query += ' AND DATE(p.updatedAt) <= ?';
+            params.push(endDate.split('T')[0]);
         }
 
-        conditions.push({ paymentStatus: 'paid' });
+        const [payments] = await connection.query(query, params);
 
-        // Only add conditions if we have any
-        if (conditions.length > 0) {
-            whereClause[Op.and] = conditions;
-        }
+        // Transform the flat results into nested objects
+        const formattedPayments = payments.map(row => ({
+            id: row.id,
+            amount: row.amount,
+            paymentMethod: row.paymentMethod,
+            paymentStatus: row.paymentStatus,
+            updatedAt: row.updatedAt,
+            Reservation: {
+                id: row.reservationId,
+                startDate: row.startDate,
+                endDate: row.endDate
+            },
+            Car: {
+                model: row.model,
+                year: row.year,
+                plateId: row.plateId
+            },
+            Customer: {
+                id: row.customerId,
+                name: row.customerName,
+                phone: row.customerPhone,
+                email: row.customerEmail
+            }
+        }));
 
-        payments = await Payment.findAll({
-            where: whereClause,
-            include: [
-                {
-                    model: Reservation,
-                    include:[
-                        {
-                            model: Car,
-                            include:[
-                                {
-                                    model: Office,
-                                    attributes:['name' , 'location']
-                                }
-                            ],
-                            attributes: ['model' , 'year' , 'plateId']
-                        },
-                        {
-                            model: Customer,
-                            attributes: ['name' , 'phone' , 'email']
-                        }
-                    ],
-                    attributes: ['id']
-                }
-            ],
-        })
-        res.json(payments);
+        res.json(formattedPayments);
     } catch (error) {
         console.error('Error generating payment report:', error);
         res.status(500).json({ message: 'Failed to generate report', error: error.message });
+    } finally {
+        connection.release();
     }
 });
 

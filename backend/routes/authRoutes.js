@@ -1,10 +1,8 @@
 const express = require('express')
-const { User } = require('../models/authModels')
-const { Customer } = require('../models/carModels')
 const bcrypt = require('bcrypt')
 const loginRoutes = express.Router()
 const jwt = require('jsonwebtoken')
-const sequelize = require('../config/database');
+const pool = require('../config/database');
 
 loginRoutes.get('', async (req, res) => {
     res.send("TEST")
@@ -12,6 +10,7 @@ loginRoutes.get('', async (req, res) => {
 
 //Route to create a user
 loginRoutes.post('/register', async (req, res) => {
+    const connection = await pool.getConnection();
     try {
         console.log('Received registration data:', req.body);
         const { username, password, customerInfo } = req.body;
@@ -24,27 +23,29 @@ loginRoutes.post('/register', async (req, res) => {
 
         const { name, email, phone, address } = customerInfo;
 
-        // Check if username already exists
-        const existingUser = await User.findOne({
-            where: {
-                username: username
-            }
-        });
+        await connection.beginTransaction();
 
-        if (existingUser) {
+        // Check if username already exists
+        const [existingUser] = await connection.execute(
+            'SELECT id FROM user WHERE username = ?',
+            [username]
+        );
+
+        if (existingUser.length > 0) {
+            await connection.rollback();
             return res.status(409).json({
                 message: 'Username already exists'
             });
         }
 
         // Check if email already exists
-        const existingCustomer = await Customer.findOne({
-            where: {
-                email: email
-            }
-        });
+        const [existingCustomer] = await connection.execute(
+            'SELECT id FROM customers WHERE email = ?',
+            [email]
+        );
 
-        if (existingCustomer) {
+        if (existingCustomer.length > 0) {
+            await connection.rollback();
             return res.status(409).json({
                 message: 'Email already exists'
             });
@@ -54,33 +55,33 @@ loginRoutes.post('/register', async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
 
         try {
-            const newUser = await User.create({
-                username: username,
-                password: hashedPassword,
-                user_role: 'user'
-            });
+            const [userResult] = await connection.execute(
+                'INSERT INTO user (username, password, user_role) VALUES (?, ?, ?)',
+                [username, hashedPassword, 'user']
+            );
+
+            const userId = userResult.insertId;
 
             try {
-                await Customer.create({
-                    name,
-                    email,
-                    phone,
-                    address,
-                    userId: newUser.id
-                });
+                await connection.execute(
+                    'INSERT INTO customers (name, email, phone, address, userId, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, NOW(), NOW())',
+                    [name, email, phone, address, userId]
+                );
+
+                await connection.commit();
                 res.status(201).json({ 
                     message: 'User registered successfully',
-                    userId: newUser.id
+                    userId: userId
                 });
             } catch (error) {
                 console.error('Customer creation error:', error);
-                // If customer creation fails, we should also delete the user
-                await User.destroy({ where: { id: newUser.id }});
-                throw error; // Re-throw to be caught by outer catch
+                await connection.rollback();
+                throw error;
             }
         } catch (error) {
             console.log('Registration error:', error);
-            if (error.name === 'SequelizeUniqueConstraintError') {
+            await connection.rollback();
+            if (error.code === 'ER_DUP_ENTRY') {
                 return res.status(409).json({
                     message: 'Username or email already exists'
                 });
@@ -88,12 +89,15 @@ loginRoutes.post('/register', async (req, res) => {
             res.status(500).json({ 
                 message: 'Registration failed',
                 error: error.message,
-                details: error.original ? error.original.sqlMessage : null
+                details: error.sqlMessage
             });
         }
     } catch (error){
         console.log('Registration error:', error);
+        await connection.rollback();
         res.status(500).json({ message: 'Registration failed: ' + error });
+    } finally {
+        connection.release();
     }
 });
 
@@ -102,15 +106,21 @@ loginRoutes.post(['', '/login'], async (req, res) => {
     console.log('Login attempt for username:', username);
 
     try {
-        const user = await User.findOne({ where: { username } });
-        if (!user) {
+        const [users] = await pool.execute(
+            'SELECT * FROM user WHERE username = ?',
+            [username]
+        );
+
+        if (users.length === 0) {
             console.log('User not found');
             return res.status(404).json({ message: 'Invalid Credentials' });
         }
 
+        const user = users[0];
+
         if (await bcrypt.compare(password, user.password)) {
             const token = jwt.sign(
-                { id: user.id, username: user.username , role: user.user_role},
+                { id: user.id, username: user.username, role: user.user_role },
                 process.env.JWT_SECRET,
                 { expiresIn: '24h' }
             );
