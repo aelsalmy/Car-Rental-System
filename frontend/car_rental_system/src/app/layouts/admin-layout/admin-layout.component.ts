@@ -10,6 +10,7 @@ import { CommonModule } from '@angular/common';
 import { StatusReportComponent } from '../../components/status-report/status-report.component';
 import { CustomerReportComponent } from '../../components/customer-report/customer-report.component';
 import { PaymentReportComponent } from '../../components/payment-report/payment-report.component';
+import { CustomerSearchComponent } from '../../components/customer-search/customer-search.component';
 
 @Component({
   selector: 'app-admin-layout',
@@ -25,7 +26,8 @@ import { PaymentReportComponent } from '../../components/payment-report/payment-
     CarReportComponent,
     StatusReportComponent,
     CustomerReportComponent,
-    PaymentReportComponent
+    PaymentReportComponent,
+    CustomerSearchComponent
   ],
   template: `
     <div class="admin-layout">
@@ -41,6 +43,7 @@ import { PaymentReportComponent } from '../../components/payment-report/payment-
           <app-status-report *ngSwitchCase="'StatusReport'"></app-status-report>
           <app-customer-report *ngSwitchCase="'CustomerReport'"></app-customer-report>
           <app-payment-report *ngSwitchCase="'PaymentReport'"></app-payment-report>
+          <app-customer-search *ngSwitchCase="'CustomerSearch'"></app-customer-search>
         </ng-container>
       </div>
     </div>

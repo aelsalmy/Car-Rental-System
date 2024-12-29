@@ -39,14 +39,14 @@ import { ReportTableComponent } from '../report-table/report-table.component';
 })
 export class CustomerReportComponent {
   dataSource: MatTableDataSource<any>;
-    searchForm: FormGroup;
-    customers: any[] = [];
+  searchForm: FormGroup;
+  customers: any[] = [];
   
-    constructor(
-      private reservationService: ReservationService,
-      private carService: CarService,
-      private fb: FormBuilder
-    ) {
+  constructor(
+    private reservationService: ReservationService,
+    private carService: CarService,
+    private fb: FormBuilder
+  ) {
       this.dataSource = new MatTableDataSource();
       this.searchForm = this.fb.group({
         carId: [''],
