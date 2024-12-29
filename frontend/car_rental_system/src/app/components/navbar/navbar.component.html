@@ -1,13 +1,16 @@
 <mat-toolbar color="primary">
     <span>Car Rental System</span>
+    <button mat-button routerLink="/my-reservations" *ngIf="authService.isLoggedIn() && !isAdmin">
+        <mat-icon>list_alt</mat-icon>
+        My Reservations
+    </button>
     <span class="spacer"></span>
     <button mat-button routerLink="/cars">Cars</button>
-    <button mat-button routerLink="/my-reservations">My Reservations</button>
-    <button *ngIf="loginService.isLoggedIn()" mat-button routerLink="/register-car">Register Car</button>
+    <button *ngIf="authService.isLoggedIn()" mat-button routerLink="/register-car">Register Car</button>
     <a mat-button routerLink="/admin/reports/reservations" *ngIf="isAdmin">
         <mat-icon>assessment</mat-icon>
         Reservation Report
     </a>
-    <button *ngIf="loginService.isLoggedIn()" mat-raised-button color="warn" (click)="logout()">Logout</button>
-    <button *ngIf="!loginService.isLoggedIn()" mat-button routerLink="/login">Login</button>
+    <button *ngIf="authService.isLoggedIn()" mat-raised-button color="warn" (click)="logout()">Logout</button>
+    <button *ngIf="!authService.isLoggedIn()" mat-button routerLink="/login">Login</button>
 </mat-toolbar>

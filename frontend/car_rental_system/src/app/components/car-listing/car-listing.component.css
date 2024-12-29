@@ -80,11 +80,19 @@
     margin: 10px;
     display: flex;
     flex-direction: column;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.car-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 .car-card mat-card-content {
     flex-grow: 1;
     overflow-y: auto;
+    margin-top: 16px;
 }
 
 .features-list {

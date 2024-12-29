@@ -16,6 +16,31 @@ import { CarService } from '../../services/car.service';
 import { MatTableDataSource } from '@angular/material/table';
 import { ReportTableComponent } from '../report-table/report-table.component';
 
+interface ReservationData {
+  startDate: string;
+  endDate: string;
+  status: string;
+  Customer?: {
+    name: string;
+    phone: string;
+    email: string;
+  };
+  Car?: {
+    model: string;
+    plateId: string;
+    category: string;
+    year: string;
+    Office?: {
+      name: string;
+      location: string;
+    };
+  };
+  Payment?: {
+    paymentMethod: string;
+    paymentStatus: string;
+  };
+}
+
 @Component({
   selector: 'app-customer-report',
   standalone: true,
@@ -35,88 +60,134 @@ import { ReportTableComponent } from '../report-table/report-table.component';
     ReportTableComponent
   ],
   templateUrl: './customer-report.component.html',
-  styleUrl: './customer-report.component.css'
+  styleUrls: ['./customer-report.component.css']
 })
-export class CustomerReportComponent {
-  dataSource: MatTableDataSource<any>;
+export class CustomerReportComponent implements OnInit {
+  dataSource: MatTableDataSource<ReservationData>;
   searchForm: FormGroup;
   customers: any[] = [];
-  
+  statuses = [
+    { value: 'pending', label: 'Pending' },
+    { value: 'active', label: 'Active' },
+    { value: 'completed', label: 'Completed' },
+    { value: 'cancelled', label: 'Cancelled' }
+  ];
+
   constructor(
     private reservationService: ReservationService,
     private carService: CarService,
     private fb: FormBuilder
   ) {
-      this.dataSource = new MatTableDataSource();
-      this.searchForm = this.fb.group({
-        carId: [''],
-        startDate: [''],
-        endDate: ['']
-      });
-  
-      // Custom filter predicate
-      this.dataSource.filterPredicate = (data: any, filter: string) => {
-        const searchStr = filter.toLowerCase();
-        return (
-          // Customer details
-          (data.Customer?.name || '').toLowerCase().includes(searchStr) ||
-          (data.Customer?.phone || '').toLowerCase().includes(searchStr) ||
-          (data.Customer?.email || '').toLowerCase().includes(searchStr) ||
-          // Office details
-          (data.Car?.Office?.name || '').toLowerCase().includes(searchStr) ||
-          (data.Car?.Office?.location || '').toLowerCase().includes(searchStr) ||
-          // Reservation details
-          (data.status || '').toLowerCase().includes(searchStr) ||
-          // Payment details
-          (data.Payment?.paymentMethod || '').toLowerCase().includes(searchStr) ||
-          (data.Payment?.paymentStatus || '').toLowerCase().includes(searchStr)
-        );
-      };
-    }
-  
-    ngOnInit() {
-      this.loadCustomers();
-      this.loadReport();
-    }
-  
-    loadCustomers() {
-      this.reservationService.getAllCustomers().subscribe({
-        next: (customers) => {
-          this.customers = customers;
-        },
-        error: (error) => {
-          console.error('Error loading cars:', error);
-        }
-      });
-    }
-  
-    loadReport() {
-      const customerId = this.searchForm.get('carId')?.value;
-  
-      this.reservationService.getCustomerReport(customerId).subscribe({
-        next: (data) => {
-          console.log(data);
-          this.dataSource.data = data;
-        },
-        error: (error) => {
-          console.error('Error loading report:', error);
-        }
-      });
-    }
-  
-    applyFilter(event: Event) {
-      const filterValue = (event.target as HTMLInputElement).value;
-      this.dataSource.filter = filterValue.trim().toLowerCase();
-  
-      if (this.dataSource.paginator) {
-        this.dataSource.paginator.firstPage();
+    this.dataSource = new MatTableDataSource<ReservationData>();
+    this.searchForm = this.fb.group({
+      carId: [''],
+      startDate: [null],
+      endDate: [null],
+      status: ['']
+    });
+
+    // Custom filter predicate
+    this.dataSource.filterPredicate = (data: ReservationData, filter: string) => {
+      const searchStr = filter.toLowerCase();
+      
+      // Helper function to safely check if a string includes the search term
+      const includes = (str: any) => 
+        String(str || '').toLowerCase().includes(searchStr);
+
+      return (
+        // Customer details
+        includes(data.Customer?.name) ||
+        includes(data.Customer?.phone) ||
+        includes(data.Customer?.email) ||
+        // Office details
+        includes(data.Car?.Office?.name) ||
+        includes(data.Car?.Office?.location) ||
+        // Car details
+        includes(data.Car?.model) ||
+        includes(data.Car?.plateId) ||
+        includes(data.Car?.category) ||
+        includes(data.Car?.year) ||
+        // Reservation details
+        includes(data.status) ||
+        // Payment details
+        includes(data.Payment?.paymentMethod) ||
+        includes(data.Payment?.paymentStatus)
+      );
+    };
+  }
+
+  ngOnInit() {
+    this.loadCustomers();
+    this.loadReport();
+  }
+
+  loadCustomers() {
+    this.reservationService.getAllCustomers().subscribe({
+      next: (customers) => {
+        this.customers = customers;
+      },
+      error: (error) => {
+        console.error('Error loading customers:', error);
       }
+    });
+  }
+
+  loadReport() {
+    const customerId = this.searchForm.get('carId')?.value;
+    const startDate = this.searchForm.get('startDate')?.value;
+    const endDate = this.searchForm.get('endDate')?.value;
+    const status = this.searchForm.get('status')?.value;
+
+    this.reservationService.getCustomerReport(customerId).subscribe({
+      next: (data: ReservationData[]) => {
+        // Filter data based on selected filters
+        let filteredData = data;
+        
+        if (startDate) {
+          const startDateStr = this.formatDate(startDate);
+          filteredData = filteredData.filter(item => 
+            this.formatDate(item.startDate) === startDateStr);
+        }
+        if (endDate) {
+          const endDateStr = this.formatDate(endDate);
+          filteredData = filteredData.filter(item => 
+            this.formatDate(item.endDate) === endDateStr);
+        }
+        if (status) {
+          filteredData = filteredData.filter(item => 
+            item.status === status);
+        }
+
+        this.dataSource.data = filteredData;
+      },
+      error: (error) => {
+        console.error('Error loading report:', error);
+      }
+    });
+  }
+
+  formatDate(date: string | Date): string {
+    if (!date) return '';
+    const d = date instanceof Date ? date : new Date(date);
+    return d.toISOString().split('T')[0]; // Returns YYYY-MM-DD format
+  }
+
+  applyFilter(event: Event) {
+    const filterValue = (event.target as HTMLInputElement).value;
+    this.dataSource.filter = filterValue.trim().toLowerCase();
+
+    if (this.dataSource.paginator) {
+      this.dataSource.paginator.firstPage();
     }
-  
-    // Format date to show exact input date and time
-    formatDate(date: string): string {
-      if (!date) return '';
-      const d = new Date(date);
-      return `${d.toLocaleDateString()} ${d.toLocaleTimeString()}`;
-    }
+  }
+
+  // Reset filters
+  resetFilters() {
+    this.searchForm.patchValue({
+      startDate: null,
+      endDate: null,
+      status: ''
+    });
+    this.loadReport();
+  }
 }

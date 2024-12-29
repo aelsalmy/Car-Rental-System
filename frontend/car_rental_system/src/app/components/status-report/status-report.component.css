@@ -4,10 +4,20 @@
   
   .filter-form {
     display: flex;
+    flex-direction: column;
     gap: 20px;
-    align-items: center;
     margin-bottom: 20px;
+  }
+  
+  .filters-row {
+    display: flex;
+    gap: 20px;
     flex-wrap: wrap;
+  }
+  
+  .buttons-row {
+    display: flex;
+    gap: 10px;
   }
   
   .filter-field {
@@ -97,7 +107,20 @@
   }
   
   h2 {
-    margin-bottom: 24px;
-    color: rgba(0, 0, 0, 1);;
+    margin-bottom: 20px;
+    color: #1976d2;
     font-weight: 500;
+  }
+  
+  .reset-filters-button {
+    background-color: #1976d2;
+    color: #fff;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  
+  .reset-filters-button:hover {
+    background-color: #1565c0;
   }

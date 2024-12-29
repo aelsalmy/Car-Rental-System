@@ -123,6 +123,28 @@ export class CarReportComponent implements OnInit {
     }
   }
 
+  resetFilters() {
+    // Reset form controls
+    this.searchForm.reset();
+    
+    // Reset the search input
+    const input = document.querySelector('.filter-field input') as HTMLInputElement;
+    if (input) {
+      input.value = '';
+    }
+    
+    // Reset the table filter
+    this.dataSource.filter = '';
+    
+    // Reset paginator to first page
+    if (this.dataSource.paginator) {
+      this.dataSource.paginator.firstPage();
+    }
+    
+    // Reload the report with no filters
+    this.loadReport();
+  }
+
   // Format date to show exact input date and time
   formatDate(date: string): string {
     if (!date) return '';

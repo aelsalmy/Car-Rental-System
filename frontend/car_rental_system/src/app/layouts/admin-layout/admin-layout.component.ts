@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { AdminSidebarComponent } from '../../components/admin-sidebar/admin-sidebar.component';
 import { HomePageComponent } from '../../components/home-page/home-page.component';
 import { CarRegistrationComponent } from '../../components/car-registration/car-registration.component';
@@ -35,7 +35,7 @@ import { CustomerSearchComponent } from '../../components/customer-search/custom
       <div class="admin-content">
         <ng-container [ngSwitch]="activeView">
           <app-home-page *ngSwitchCase="'Dashboard'"></app-home-page>
-          <app-car-registration *ngSwitchCase="'RegisterCar'"></app-car-registration>
+          <app-car-registration *ngSwitchCase="'RegisterCar'" (registrationSuccess)="onCarRegistered()"></app-car-registration>
           <app-car-listing *ngSwitchCase="'CarList'"></app-car-listing>
           <app-car-reservations *ngSwitchCase="'CarReservations'"></app-car-reservations>
           <app-reservation-report *ngSwitchCase="'ReservationReport'"></app-reservation-report>
@@ -55,15 +55,25 @@ import { CustomerSearchComponent } from '../../components/customer-search/custom
     }
     .admin-content {
       flex: 1;
-      padding: 20px;
-      margin-left: 60px; /* Space for the collapsed sidebar */
+      padding: 10px;
     }
   `]
 })
-export class AdminLayoutComponent {
-  activeView: string = 'CarList';
+export class AdminLayoutComponent implements OnInit {
+  activeView = 'CarList';
+
+  ngOnInit() {
+    history.pushState(null, '', location.href);
+    window.onpopstate = function () {
+      history.pushState(null, '', location.href);
+    };
+  }
 
   changeView(view: string) {
     this.activeView = view;
+  }
+
+  onCarRegistered() {
+    this.activeView = 'CarList';
   }
 }

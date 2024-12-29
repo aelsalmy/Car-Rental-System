@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatButtonModule } from '@angular/material/button';
 import { Router, RouterModule } from '@angular/router';
-import { LoginService } from '../../services/login.service';
+import { AuthService } from '../../services/auth.service';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 
@@ -23,16 +23,20 @@ import { MatIconModule } from '@angular/material/icon';
 })
 export class NavbarComponent {
     constructor(
-        public loginService: LoginService,
+        public authService: AuthService,
         private router: Router
     ) { }
 
     get isAdmin(): boolean {
-        return this.loginService.isAdmin();
+        return this.authService.isAdmin();
+    }
+
+    get isLoggedIn(): boolean {
+        return this.authService.isLoggedIn();
     }
 
     logout() {
-        this.loginService.logout();
+        this.authService.logout();
         this.router.navigate(['/login']);
     }
 }
