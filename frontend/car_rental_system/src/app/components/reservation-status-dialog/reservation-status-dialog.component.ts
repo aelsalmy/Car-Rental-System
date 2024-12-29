@@ -58,14 +58,14 @@ export class ReservationStatusDialogComponent {
       case 'pending':
         this.availableStatuses = [
           { value: 'pending', label: 'Pending' },
-          { value: 'active', label: 'Approve' }
+          { value: 'active', label: 'Pick Up' }
         ];
         break;
       case 'active':
         if (today >= reservationStart) {
           this.availableStatuses = [
             { value: 'active', label: 'Active' },
-            { value: 'completed', label: 'Mark as Returned' }
+            { value: 'completed', label: 'Drop Off' }
           ];
         } else {
           this.availableStatuses = [

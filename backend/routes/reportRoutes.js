@@ -191,9 +191,10 @@ router.get('/status', authenticateAdmin, async (req, res) => {
         }
         
         let cars;
+        const carMap = new Map();
 
         if(status == 'rented'){
-            cars = await Reservation.findAll({
+            const rented = await Reservation.findAll({
             where: whereClause,
             include: [
                     {
@@ -214,16 +215,54 @@ router.get('/status', authenticateAdmin, async (req, res) => {
                 attributes: ['carId' , 'customerId'],
                 order: [['startDate', 'DESC']]
             });
+
+            rented.forEach((item) => {
+                const carData = {
+                    carId: item.Car?.id || null,
+                    model: item.Car?.model || null,
+                    year: item.Car?.year || null,
+                    status: 'rented',
+                    plateId: item.Car?.plateId || null,
+                    officeName: item.Car?.Office?.name || null,
+                    officeLocation: item.Car?.Office?.location || null,
+                    customerName: item.Customer?.name || null,
+                    customerPhone: item.Customer?.phone || null,
+                    customerEmail: item.Customer?.email || null
+                };
+            
+                if (carData.carId) {
+                    carMap.set(carData.carId, carData);
+                }
+            });
         }
         else{
             if(status == 'out_of_service'){
-                cars = await Car.findAll({
+                const outOfService = await Car.findAll({
                     where: {status: status},
                     include: {
                         model: Office,
                         attributes: ['id', 'name', 'location']
                     },
                     attributes: ['id', 'model', 'year', 'plateId', 'status', 'dailyRate', 'category']
+                });
+
+                outOfService.forEach((item) => {
+                    const carData = {
+                        carId: item.id || null,
+                        model: item.model || null,
+                        year: item.year || null,
+                        status: 'out_of_service',
+                        plateId: item.plateId || null,
+                        officeName: item.Office?.name || null,
+                        officeLocation: item.Office?.location || null,
+                        customerName: null, 
+                        customerPhone: null,
+                        customerEmail: null
+                    };
+                
+                    if (carData.carId && !carMap.has(carData.carId)) {
+                        carMap.set(carData.carId, carData);
+                    }
                 });
             } else {
                 if(status == 'active'){
@@ -251,7 +290,7 @@ router.get('/status', authenticateAdmin, async (req, res) => {
 
                     const rentedCarIds = rented.map((r) => r.carId);
 
-                    cars = await Car.findAll({
+                    const active = await Car.findAll({
                         where: {
                             status: {
                                 [Op.not]: 'out_of_service',
@@ -266,18 +305,102 @@ router.get('/status', authenticateAdmin, async (req, res) => {
                         },
                         attributes: ['id', 'model', 'year', 'plateId', 'status', 'dailyRate', 'category']
                     });
+
+                    active.forEach((item) => {
+                        const carData = {
+                            carId: item.id || null,
+                            model: item.model || null,
+                            year: item.year || null,
+                            status: 'active',
+                            plateId: item.plateId || null,
+                            officeName: item.Office?.name || null,
+                            officeLocation: item.Office?.location || null,
+                            customerName: null, 
+                            customerPhone: null,
+                            customerEmail: null
+                        };
+                    
+                        if (carData.carId && !carMap.has(carData.carId)) {
+                            carMap.set(carData.carId, carData);
+                        }
+                    });
                 }
             }
             if(!status){
-                cars = await Car.findAll({
+                const rented = await Reservation.findAll({
+                    where: whereClause,
+                    include: [
+                            {
+                            where: {status: 'active'},
+                            model: Car,
+                            include: [
+                                {
+                                    model: Office,
+                                    attributes: ['id', 'name', 'location']
+                                }
+                            ],
+                            attributes: ['id', 'model', 'year', 'plateId', 'status', 'dailyRate', 'category']
+                        },
+                        {
+                            model: Customer,
+                            attributes: ['id', 'name' , 'phone']
+                        }
+                    ],
+                    attributes: ['carId' , 'customerId'],
+                    order: [['startDate', 'DESC']]
+                });
+
+                const others = await Car.findAll({
                     include: {
                         model: Office,
                         attributes: ['id', 'name', 'location']
                     },
                     attributes: ['id', 'model', 'year', 'plateId', 'status', 'dailyRate', 'category']
                 });
+
+                rented.forEach((item) => {
+                    const carData = {
+                        carId: item.Car?.id || null,
+                        model: item.Car?.model || null,
+                        year: item.Car?.year || null,
+                        status: 'rented',
+                        plateId: item.Car?.plateId || null,
+                        officeName: item.Car?.Office?.name || null,
+                        officeLocation: item.Car?.Office?.location || null,
+                        customerName: item.Customer?.name || null,
+                        customerPhone: item.Customer?.phone || null,
+                        customerEmail: item.Customer?.email || null
+                    };
+                
+                    if (carData.carId) {
+                        carMap.set(carData.carId, carData);
+                    }
+                });
+                
+                others.forEach((item) => {
+                    const carData = {
+                        carId: item.id || null,
+                        model: item.model || null,
+                        year: item.year || null,
+                        status: item.status == 'out_of_service'?'out_of_service':'active',
+                        plateId: item.plateId || null,
+                        officeName: item.Office?.name || null,
+                        officeLocation: item.Office?.location || null,
+                        customerName: null, 
+                        customerPhone: null,
+                        customerEmail: null
+                    };
+                
+                    if (carData.carId && !carMap.has(carData.carId)) {
+                        carMap.set(carData.carId, carData);
+                    }
+                });
+                
+                
             }
         }
+        cars = Array.from(carMap.values()); 
+
         res.json(cars);
     } catch (error) {
         console.error('Error generating car reservation report:', error);

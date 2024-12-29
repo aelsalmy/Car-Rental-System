@@ -74,7 +74,8 @@ export class CustomerSearchComponent {
           // Customer details
           (data.name || '').toLowerCase().includes(searchStr) ||
           (data.phone || '').toLowerCase().includes(searchStr) ||
-          (data.email || '').toLowerCase().includes(searchStr)
+          (data.email || '').toLowerCase().includes(searchStr) ||
+          (data.address || '').toLowerCase().includes(searchStr)
         );
       };
     }
