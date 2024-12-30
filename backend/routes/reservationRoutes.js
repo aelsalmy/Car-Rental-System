@@ -477,9 +477,9 @@ router.patch('/car/:carId/status', authenticateAdmin, async (req, res) => {
 router.get('/search', authenticateAdmin, async (req, res) => {
     try {
         const { startDate, endDate, status, currentlyRented } = req.query;
-        
+                
         let query = `
-            SELECT 
+            SELECT DISTINCT
                 r.*,
                 c.*,
                 o.*,
@@ -508,15 +508,13 @@ router.get('/search', authenticateAdmin, async (req, res) => {
             query += ` AND r.startDate <= ? AND r.endDate >= ? AND r.status = 'active'`;
             params.push(currentDate, currentDate);
         } else {
-            if (startDate && endDate) {
-                query += ` AND r.startDate = ? AND r.endDate = ?`;
-                params.push(startDate, endDate);
-            } else if (startDate) {
-                query += ` AND r.startDate = ?`;
-                params.push(startDate);
-            } else if (endDate) {
-                query += ` AND r.endDate = ?`;
-                params.push(endDate);
+            if (startDate) {
+                query += ` AND (DATE(r.startDate) = DATE(?) OR DATE(r.endDate) = DATE(?))`;
+                params.push(startDate, startDate);
+            }
+            if (endDate) {
+                query += ` AND (DATE(r.startDate) = DATE(?) OR DATE(r.endDate) = DATE(?))`;
+                params.push(endDate, endDate);
             }
             
             if (status) {
@@ -526,6 +524,7 @@ router.get('/search', authenticateAdmin, async (req, res) => {
         }
 
         query += ` ORDER BY r.startDate DESC`;
+
 
         const [reservations] = await pool.execute(query, params);
 

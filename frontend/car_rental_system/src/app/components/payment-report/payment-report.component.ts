@@ -55,21 +55,46 @@ export class PaymentReportComponent implements OnInit {
   }
 
   loadReport() {
-    const startDate = this.searchForm.get('startDate')?.value;
-    const endDate = this.searchForm.get('endDate')?.value;
+    let startDate = this.searchForm.get('startDate')?.value;
+    let endDate = this.searchForm.get('endDate')?.value;
 
-    const start = startDate ? new Date(startDate).toISOString() : undefined;
-    const end = endDate ? new Date(endDate).toISOString() : undefined;
+    // Format dates to YYYY-MM-DD format without any time component
+    if (startDate) {
+      const date = new Date(startDate);
+      startDate = date.getFullYear() + '-' + 
+                 String(date.getMonth() + 1).padStart(2, '0') + '-' + 
+                 String(date.getDate()).padStart(2, '0');
+    }
 
-    this.reservationService.getPaymentReport(start, end).subscribe({
+    if (endDate) {
+      const date = new Date(endDate);
+      endDate = date.getFullYear() + '-' + 
+               String(date.getMonth() + 1).padStart(2, '0') + '-' + 
+               String(date.getDate()).padStart(2, '0');
+    }
+
+    this.reservationService.getPaymentReport(startDate, endDate).subscribe({
       next: (data: PaymentData[]) => {
-        this.payments = data;
-        this.filteredPayments = data;
+        // Format the dates in the response
+        this.payments = data.map(item => ({
+          ...item,
+          updatedAt: this.formatDateOnly(item.updatedAt)
+        }));
+        this.filteredPayments = this.payments;
       },
       error: (error) => {
         console.error('Error loading report:', error);
       }
     });
+  }
+
+  // Helper method to format dates consistently
+  formatDateOnly(dateStr: string): string {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    return date.getFullYear() + '-' + 
+           String(date.getMonth() + 1).padStart(2, '0') + '-' + 
+           String(date.getDate()).padStart(2, '0');
   }
 
   resetFilters() {
