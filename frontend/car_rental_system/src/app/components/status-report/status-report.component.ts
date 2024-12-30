@@ -60,9 +60,13 @@ export class StatusReportComponent implements OnInit {
         (data.model || '').toLowerCase().includes(searchStr) ||
         (data.plateId || '').toLowerCase().includes(searchStr) ||
         (data.category || '').toLowerCase().includes(searchStr) ||
+        (data.year || '').toString().toLowerCase().includes(searchStr) ||
         // Office details
         (data.Office?.name || '').toLowerCase().includes(searchStr) ||
-        (data.Office?.location || '').toLowerCase().includes(searchStr)
+        (data.Office?.location || '').toLowerCase().includes(searchStr) ||
+        (data.Customer?.name || '').toLowerCase().includes(searchStr) ||
+        (data.Customer?.phone || '').toLowerCase().includes(searchStr) ||
+        (data.Customer?.email || '').toLowerCase().includes(searchStr)
       );
     };
   }

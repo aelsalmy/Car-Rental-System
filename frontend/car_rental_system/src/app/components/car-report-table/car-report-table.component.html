@@ -24,23 +24,23 @@
       <ng-container matColumnDef="customerName">
         <th mat-header-cell *matHeaderCellDef mat-sort-header> Customer Name </th>
         <td mat-cell *matCellDef="let row"> 
-            {{row.customerName == null?'N/A':row.customerName}}
-          <div class="customer-email" *ngIf = "row.status == 'rented'">{{row.customerEmail == null?'':row.customerName}}</div>
+            {{row.Customer.name == null?'N/A':row.Customer.name}}
+          <div class="customer-email" *ngIf = "row.status == 'rented'">{{row.Customer.email == null?'':row.Customer.email}}</div>
         </td>
       </ng-container>
 
       <!-- Customer Phone Column -->
       <ng-container matColumnDef="customerPhone">
         <th mat-header-cell *matHeaderCellDef mat-sort-header> Customer Phone </th>
-        <td mat-cell *matCellDef="let row"> {{row.customerPhone == null?'N/A':row.customerPhone}} </td>
+        <td mat-cell *matCellDef="let row"> {{row.Customer.phone == null?'N/A':row.Customer.phone}} </td>
       </ng-container>
 
       <!-- Office Name Column -->
       <ng-container matColumnDef="officeName">
         <th mat-header-cell *matHeaderCellDef mat-sort-header> Office </th>
         <td mat-cell *matCellDef="let row"> 
-            {{row.officeName}}
-          <div class="office-location">{{row.officeLocation}}</div>
+            {{row.Office.name}}
+          <div class="office-location">{{row.Office.location}}</div>
         </td>
       </ng-container>
 

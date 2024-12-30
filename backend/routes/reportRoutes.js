@@ -190,19 +190,21 @@ router.get('/status', authenticateAdmin, async (req, res) => {
         const { status, date } = req.query;
         const carMap = new Map();
 
+        let params = [];
+
         if (status === 'rented') {
             let query = `
                 SELECT 
                     r.id as reservationId, r.startDate, r.endDate, r.status as reservationStatus,
-                    c.*, 
-                    o.id as officeId, o.name as officeName, o.location as officeLocation, o.phone as officePhone
+                    c.id as carId, c.model as model , c.year as modelYear , c.plateId as plateId, 
+                    o.id as officeId, o.name as officeName, o.location as officeLocation, o.phone as officePhone,
+                    cust.name as customerName , cust.phone as customerPhone , cust.email as customerEmail
                 FROM reservations r
                 JOIN cars c ON r.carId = c.id
                 LEFT JOIN offices o ON c.officeId = o.id
+                LEFT JOIN customers as cust ON cust.id = r.customerId
                 WHERE r.status = 'active'
             `;
-
-            const params = [];
 
             if (date) {
                 query += ` AND DATE(?) BETWEEN DATE(r.startDate) AND DATE(r.endDate)`;
@@ -212,33 +214,29 @@ router.get('/status', authenticateAdmin, async (req, res) => {
             const [rentedCars] = await connection.query(query, params);
 
             rentedCars.forEach(car => {
-                carMap.set(car.id, {
-                    id: car.id,
+                carMap.set(car.carId, {
+                    id: car.carId,
                     model: car.model,
-                    year: car.year,
+                    year: car.modelYear,
                     plateId: car.plateId,
                     status: 'rented',
-                    dailyRate: car.dailyRate,
-                    category: car.category,
-                    transmission: car.transmission,
-                    fuelType: car.fuelType,
+                    Customer: {
+                        name: car.customerName,
+                        email: car.customerEmail,
+                        phone: car.customerPhone
+                    },
                     Office: {
                         id: car.officeId,
                         name: car.officeName,
                         location: car.officeLocation,
                         phone: car.officePhone
-                    },
-                    currentReservation: {
-                        id: car.reservationId,
-                        startDate: car.startDate,
-                        endDate: car.endDate,
-                        status: car.reservationStatus
                     }
                 });
             });
         } else if (status === 'out_of_service') {
             const [outOfServiceCars] = await connection.query(`
-                SELECT c.*, 
+                SELECT 
+                    c.model as model, c.year as modelYear , c.plateId as plateId ,
                     o.id as officeId, o.name as officeName, o.location as officeLocation, o.phone as officePhone
                 FROM cars c
                 LEFT JOIN offices o ON c.officeId = o.id
@@ -246,16 +244,17 @@ router.get('/status', authenticateAdmin, async (req, res) => {
             `, [status]);
 
             outOfServiceCars.forEach(car => {
-                carMap.set(car.id, {
-                    id: car.id,
+                carMap.set(car.carId, {
+                    id: car.carId,
                     model: car.model,
-                    year: car.year,
+                    year: car.modelYear,
                     plateId: car.plateId,
-                    status: car.status,
-                    dailyRate: car.dailyRate,
-                    category: car.category,
-                    transmission: car.transmission,
-                    fuelType: car.fuelType,
+                    status: 'out_of_service',
+                    Customer: {
+                        name: car.customerName || null,
+                        email: car.customerEmail || null,
+                        phone: car.customerPhone || null
+                    },
                     Office: {
                         id: car.officeId,
                         name: car.officeName,
@@ -265,57 +264,90 @@ router.get('/status', authenticateAdmin, async (req, res) => {
                 });
             });
         } else {
-            // Get all cars if no specific status is provided
-            let query = `
-                SELECT DISTINCT
-                    c.*,
-                    o.id as officeId, o.name as officeName, o.location as officeLocation, o.phone as officePhone,
-                    r.id as reservationId, r.startDate, r.endDate, r.status as reservationStatus
-                FROM cars c
-                LEFT JOIN offices o ON c.officeId = o.id
-                LEFT JOIN reservations r ON c.id = r.carId AND r.status = 'active'
-            `;
+            if(status === 'active'){
+                let query = `
+                    SELECT 
+                        c.id as carId, c.model as model, c.year as modelYear, c.plateId as plateId, 
+                        o.id as officeId, o.name as officeName, o.location as officeLocation, o.phone as officePhone
+                    FROM cars c
+                    LEFT JOIN offices o ON c.officeId = o.id
+                    LEFT JOIN reservations r ON r.carId = c.id AND r.status = 'active'
+                    WHERE r.id IS NULL  -- No active reservation
+                `;
+            
+                // If a specific date is provided, add logic to check availability on that date
+                if (date) {
+                    query += ` OR (DATE(?) NOT BETWEEN DATE(r.startDate) AND DATE(r.endDate))`;
+                    params.push(date);
+                }
 
-            const params = [];
+                const [availableCars] = await connection.query(query, params);
 
-            if (date) {
-                query += ` AND (r.id IS NULL OR (DATE(?) BETWEEN DATE(r.startDate) AND DATE(r.endDate)))`;
-                params.push(date);
-            }
-
-            const [allCars] = await connection.query(query, params);
-
-            allCars.forEach(car => {
-                carMap.set(car.id, {
-                    id: car.id,
-                    model: car.model,
-                    year: car.year,
-                    plateId: car.plateId,
-                    status: car.reservationId ? 'rented' : car.status,
-                    dailyRate: car.dailyRate,
-                    category: car.category,
-                    transmission: car.transmission,
-                    fuelType: car.fuelType,
-                    Office: {
-                        id: car.officeId,
-                        name: car.officeName,
-                        location: car.officeLocation,
-                        phone: car.officePhone
-                    },
-                    ...(car.reservationId && {
-                        currentReservation: {
-                            id: car.reservationId,
-                            startDate: car.startDate,
-                            endDate: car.endDate,
-                            status: car.reservationStatus
+                availableCars.forEach(car => {
+                    carMap.set(car.carId, {
+                        id: car.carId,
+                        model: car.model,
+                        year: car.modelYear,
+                        plateId: car.plateId,
+                        status: 'active',
+                        Customer: {
+                            name: null,
+                            email: null,
+                            phone: null
+                        },
+                        Office: {
+                            id: car.officeId,
+                            name: car.officeName,
+                            location: car.officeLocation,
+                            phone: car.officePhone
                         }
-                    })
+                    });
                 });
-            });
+
+            } else {
+                // Get all cars if no specific status is provided
+                let query = `
+                    SELECT DISTINCT
+                        car.id as carId , car.model as model, car.year as modelYear , car.plateId as plateId, car.status as carStatus,
+                        c.name as customerName, c.email as customerEmail, c.phone as customerPhone, 
+                        o.name as officeName , o.location as officeLocation,
+                        r.id as reservationId, r.startDate, r.endDate, r.status as reservationStatus
+                    FROM cars as car
+                    LEFT JOIN reservations as r ON car.id = r.carId
+                    LEFT JOIN customers as c ON c.id = r.customerId
+                    LEFT JOIN offices as o ON car.officeId = o.id
+                `;
+
+                const params = [];
+
+                const [allCars] = await connection.query(query, params);
+
+                allCars.forEach(car => {
+                    carMap.set(car.carId, {
+                        id: car.carId,
+                        model: car.model,
+                        year: car.modelYear,
+                        plateId: car.plateId,
+                        status: car.reservationId ? 'rented' : car.carStatus,
+                        Customer: {
+                            name: car.customerName,
+                            email: car.customerEmail,
+                            phone: car.customerPhone
+                        },
+                        Office: {
+                            id: car.officeId,
+                            name: car.officeName,
+                            location: car.officeLocation,
+                            phone: car.officePhone
+                        }
+                    });
+                });
+            }
         }
 
         const cars = Array.from(carMap.values());
         res.json(cars);
+
     } catch (error) {
         console.error('Error generating car status report:', error);
         res.status(500).json({ message: 'Failed to generate report', error: error.message });

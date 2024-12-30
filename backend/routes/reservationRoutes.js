@@ -262,6 +262,7 @@ router.get('/getAll', authenticateAdmin, async (req, res) => {
                 r.*,
                 c.*,
                 o.*,
+                r.status as reserv_status,
                 cu.name as customer_name,
                 cu.email as customer_email,
                 cu.phone as customer_phone,
@@ -287,7 +288,7 @@ router.get('/getAll', authenticateAdmin, async (req, res) => {
             customerId: reservation.customerId,
             startDate: reservation.startDate,
             endDate: reservation.endDate,
-            status: reservation.status,
+            status: reservation.reserv_status,
             createdAt: reservation.createdAt,
             updatedAt: reservation.updatedAt,
             Car: {
@@ -323,7 +324,7 @@ router.get('/getAll', authenticateAdmin, async (req, res) => {
                 paymentStatus: reservation.payment_status
             }
         }));
-
+        
         res.json(formattedReservations);
     } catch (error) {
         console.error('Error fetching all reservations:', error);
