@@ -32,13 +32,13 @@ router.get('/car', authenticateAdmin, async (req, res) => {
         }
 
         if (startDate) {
-            query += ' AND DATE(r.startDate) = ?';
-            params.push(startDate.split('T')[0]);
+            query += ` AND DATE_FORMAT(r.startDate, '%Y-%m-%d') = ?`;
+            params.push(startDate);
         }
 
         if (endDate) {
-            query += ' AND DATE(r.endDate) = ?';
-            params.push(endDate.split('T')[0]);
+            query += ` AND DATE_FORMAT(r.endDate, '%Y-%m-%d') = ?`;
+            params.push(endDate);
         }
 
         query += ' ORDER BY r.startDate DESC';
@@ -120,13 +120,13 @@ router.get('/reservation', authenticateAdmin, async (req, res) => {
         const params = [];
 
         if (startDate) {
-            query += ' AND DATE(r.startDate) = ?';
-            params.push(startDate.split('T')[0]);
+            query += ` AND DATE_FORMAT(r.startDate, '%Y-%m-%d') = ?`;
+            params.push(startDate);
         }
 
         if (endDate) {
-            query += ' AND DATE(r.endDate) = ?';
-            params.push(endDate.split('T')[0]);
+            query += ` AND DATE_FORMAT(r.endDate, '%Y-%m-%d') = ?`;
+            params.push(endDate);
         }
 
         query += ' ORDER BY r.startDate DESC';
@@ -207,7 +207,7 @@ router.get('/status', authenticateAdmin, async (req, res) => {
             `;
 
             if (date) {
-                query += ` AND DATE(?) BETWEEN DATE(r.startDate) AND DATE(r.endDate)`;
+                query += ` AND DATE_FORMAT(?, '%Y-%m-%d') BETWEEN DATE_FORMAT(r.startDate, '%Y-%m-%d') AND DATE_FORMAT(r.endDate, '%Y-%m-%d')`;
                 params.push(date);
             }
 
@@ -277,7 +277,7 @@ router.get('/status', authenticateAdmin, async (req, res) => {
             
                 // If a specific date is provided, add logic to check availability on that date
                 if (date) {
-                    query += ` OR (DATE(?) NOT BETWEEN DATE(r.startDate) AND DATE(r.endDate))`;
+                    query += ` OR DATE_FORMAT(?, '%Y-%m-%d') NOT BETWEEN DATE_FORMAT(r.startDate, '%Y-%m-%d') AND DATE_FORMAT(r.endDate, '%Y-%m-%d')`;
                     params.push(date);
                 }
 
@@ -453,13 +453,13 @@ router.get('/payment', authenticateAdmin, async (req, res) => {
         const params = [];
 
         if (startDate) {
-            query += ' AND DATE(p.updatedAt) >= ?';
-            params.push(startDate.split('T')[0]);
+            query += ` AND DATE_FORMAT(p.updatedAt, '%Y-%m-%d') = ?`;
+            params.push(startDate);
         }
 
         if (endDate) {
-            query += ' AND DATE(p.updatedAt) <= ?';
-            params.push(endDate.split('T')[0]);
+            query += ` AND DATE_FORMAT(p.updatedAt, '%Y-%m-%d') = ?`;
+            params.push(endDate);
         }
 
         query += ' ORDER BY p.updatedAt DESC';

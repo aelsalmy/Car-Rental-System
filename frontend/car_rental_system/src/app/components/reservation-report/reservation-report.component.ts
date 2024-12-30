@@ -13,6 +13,32 @@ import { ReservationService } from '../../services/reservation.service';
 import { MatTableDataSource } from '@angular/material/table';
 import { ReportTableComponent } from '../report-table/report-table.component';
 
+interface ReservationData {
+  id: number;
+  startDate: string;
+  endDate: string;
+  status: string;
+  Car?: {
+    model: string;
+    plateId: string;
+    year: string;
+    category: string;
+    Office?: {
+      name: string;
+      location: string;
+    };
+  };
+  Customer?: {
+    name: string;
+    email: string;
+    phone: string;
+  };
+  Payment?: {
+    paymentMethod: string;
+    paymentStatus: string;
+  };
+}
+
 @Component({
   selector: 'app-reservation-report',
   standalone: true,
@@ -33,21 +59,21 @@ import { ReportTableComponent } from '../report-table/report-table.component';
   styleUrls: ['./reservation-report.component.css']
 })
 export class ReservationReportComponent implements OnInit {
-  dataSource: MatTableDataSource<any>;
+  dataSource: MatTableDataSource<ReservationData>;
   searchForm: FormGroup;
 
   constructor(
     private reservationService: ReservationService,
     private fb: FormBuilder
   ) {
-    this.dataSource = new MatTableDataSource();
+    this.dataSource = new MatTableDataSource<ReservationData>();
     this.searchForm = this.fb.group({
       startDate: [''],
       endDate: ['']
     });
 
     // Custom filter predicate to search across multiple columns
-    this.dataSource.filterPredicate = (data: any, filter: string) => {
+    this.dataSource.filterPredicate = (data: ReservationData, filter: string) => {
       const searchStr = filter.toLowerCase();
       return (
         // Car details
@@ -76,21 +102,53 @@ export class ReservationReportComponent implements OnInit {
   }
 
   loadReport() {
-    const startDate = this.searchForm.get('startDate')?.value;
-    const endDate = this.searchForm.get('endDate')?.value;
+    let startDate = this.searchForm.get('startDate')?.value;
+    let endDate = this.searchForm.get('endDate')?.value;
 
-    // Convert dates if they exist
-    const start = startDate ? new Date(startDate).toISOString() : undefined;
-    const end = endDate ? new Date(endDate).toISOString() : undefined;
+    // Format dates to YYYY-MM-DD format without any time component
+    if (startDate) {
+      const date = new Date(startDate);
+      startDate = date.getFullYear() + '-' + 
+                 String(date.getMonth() + 1).padStart(2, '0') + '-' + 
+                 String(date.getDate()).padStart(2, '0');
+    }
 
-    this.reservationService.getReservationReport(start, end).subscribe({
-      next: (data) => {
-        this.dataSource.data = data;
+    if (endDate) {
+      const date = new Date(endDate);
+      endDate = date.getFullYear() + '-' + 
+               String(date.getMonth() + 1).padStart(2, '0') + '-' + 
+               String(date.getDate()).padStart(2, '0');
+    }
+
+    this.reservationService.getReservationReport(startDate, endDate).subscribe({
+      next: (data: ReservationData[]) => {
+        // Format the dates in the response data
+        this.dataSource.data = data.map((item: ReservationData) => ({
+          ...item,
+          startDate: this.formatDateOnly(item.startDate),
+          endDate: this.formatDateOnly(item.endDate)
+        }));
       },
       error: (error) => {
         console.error('Error loading report:', error);
       }
     });
+  }
+
+  // Helper method to format dates consistently
+  formatDateOnly(dateStr: string): string {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    return date.getFullYear() + '-' + 
+           String(date.getMonth() + 1).padStart(2, '0') + '-' + 
+           String(date.getDate()).padStart(2, '0');
+  }
+
+  // Format date for display without time
+  formatDate(date: string): string {
+    if (!date) return '';
+    const d = new Date(date);
+    return d.toLocaleDateString();
   }
 
   applyFilter(event: Event) {
@@ -122,13 +180,5 @@ export class ReservationReportComponent implements OnInit {
     
     // Reload the report with no filters
     this.loadReport();
-  }
-
-  // Format date to show exact input date and time
-  formatDate(date: string): string {
-    if (!date) return '';
-    const d = new Date(date);
-    
-    return `${d.toLocaleDateString()} ${d.toLocaleTimeString()}`;
   }
 }

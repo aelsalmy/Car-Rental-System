@@ -16,6 +16,30 @@ import { CarService } from '../../services/car.service';
 import { MatTableDataSource } from '@angular/material/table';
 import { ReportTableComponent } from '../report-table/report-table.component';
 
+interface Reservation {
+  id: number;
+  startDate: string;
+  endDate: string;
+  status: string;
+  Car: {
+    model: string;
+    plateId: string;
+    Office: {
+      name: string;
+      location: string;
+    };
+  };
+  Customer: {
+    name: string;
+    email: string;
+    phone: string;
+  };
+  Payment: {
+    amount: number;
+    paymentStatus: string;
+  };
+}
+
 @Component({
   selector: 'app-car-report',
   standalone: true,
@@ -39,7 +63,7 @@ import { ReportTableComponent } from '../report-table/report-table.component';
 })
 export class CarReportComponent implements OnInit {
 
-  dataSource: MatTableDataSource<any>;
+  dataSource: MatTableDataSource<Reservation>;
   searchForm: FormGroup;
   cars: any[] = [];
 
@@ -48,7 +72,7 @@ export class CarReportComponent implements OnInit {
     private carService: CarService,
     private fb: FormBuilder
   ) {
-    this.dataSource = new MatTableDataSource();
+    this.dataSource = new MatTableDataSource<Reservation>();
     this.searchForm = this.fb.group({
       carId: [''],
       startDate: [''],
@@ -97,16 +121,32 @@ export class CarReportComponent implements OnInit {
 
   loadReport() {
     const carId = this.searchForm.get('carId')?.value;
-    const startDate = this.searchForm.get('startDate')?.value;
-    const endDate = this.searchForm.get('endDate')?.value;
+    let startDate = this.searchForm.get('startDate')?.value;
+    let endDate = this.searchForm.get('endDate')?.value;
 
-    // Convert dates if they exist
-    const start = startDate ? new Date(startDate).toISOString() : undefined;
-    const end = endDate ? new Date(endDate).toISOString() : undefined;
+    // Format dates to YYYY-MM-DD format without any time component
+    if (startDate) {
+      const date = new Date(startDate);
+      startDate = date.getFullYear() + '-' + 
+                 String(date.getMonth() + 1).padStart(2, '0') + '-' + 
+                 String(date.getDate()).padStart(2, '0');
+    }
 
-    this.reservationService.getCarReservationReport(carId, start, end).subscribe({
-      next: (data) => {
-        this.dataSource.data = data;
+    if (endDate) {
+      const date = new Date(endDate);
+      endDate = date.getFullYear() + '-' + 
+               String(date.getMonth() + 1).padStart(2, '0') + '-' + 
+               String(date.getDate()).padStart(2, '0');
+    }
+
+    this.reservationService.getCarReservationReport(carId, startDate, endDate).subscribe({
+      next: (data: Reservation[]) => {
+        // Format the dates in the response for display
+        this.dataSource.data = data.map((item: Reservation) => ({
+          ...item,
+          startDate: this.formatDateOnly(item.startDate),
+          endDate: this.formatDateOnly(item.endDate)
+        }));
       },
       error: (error) => {
         console.error('Error loading report:', error);
@@ -143,6 +183,15 @@ export class CarReportComponent implements OnInit {
     
     // Reload the report with no filters
     this.loadReport();
+  }
+
+  // Helper method to format dates for display
+  formatDateOnly(dateStr: string): string {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    return date.getFullYear() + '-' + 
+           String(date.getMonth() + 1).padStart(2, '0') + '-' + 
+           String(date.getDate()).padStart(2, '0');
   }
 
   // Format date to show exact input date and time
