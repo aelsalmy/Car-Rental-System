@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, throwError, tap, catchError } from 'rxjs';
 import { LoginService } from './login.service';
 
 @Injectable({
@@ -212,6 +212,12 @@ export class ReservationService {
 
         return this.http.get(url, {
             headers: { Authorization: `Bearer ${token}` }
-        });
+        }).pipe(
+            tap(response => console.log('Payment Report API Response:', response)),
+            catchError(error => {
+                console.error('Payment Report API Error:', error);
+                return throwError(() => error);
+            })
+        );
     }
 }

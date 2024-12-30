@@ -3,11 +3,21 @@ const router = express.Router();
 const pool = require('../config/database');
 const { authenticateToken, authenticateAdmin } = require('../middleware/auth');
 
+// Helper function to format date for MySQL
+function formatDateForMySQL(dateString) {
+    const date = new Date(dateString);
+    return date.toISOString().slice(0, 19).replace('T', ' ');
+}
+
 router.post('/', authenticateToken, async (req, res) => {
     const connection = await pool.getConnection();
     try {
         const { carId, startDate, endDate, paymentMethod, paymentStatus, totalCost } = req.body;
         const userid = req.user.id;
+
+        // Format dates for MySQL
+        const formattedStartDate = formatDateForMySQL(startDate);
+        const formattedEndDate = formatDateForMySQL(endDate);
 
         await connection.beginTransaction();
 
@@ -32,7 +42,7 @@ router.post('/', authenticateToken, async (req, res) => {
                 (endDate BETWEEN ? AND ?) OR
                 (startDate <= ? AND endDate >= ?)
             )`,
-            [carId, startDate, endDate, startDate, endDate, startDate, endDate]
+            [carId, formattedStartDate, formattedEndDate, formattedStartDate, formattedEndDate, formattedStartDate, formattedEndDate]
         );
 
         const [customers] = await connection.execute(
@@ -58,7 +68,7 @@ router.post('/', authenticateToken, async (req, res) => {
         const [reservationResult] = await connection.execute(
             `INSERT INTO reservations (carId, customerId, startDate, endDate, status, createdAt, updatedAt)
              VALUES (?, ?, ?, ?, 'pending', NOW(), NOW())`,
-            [carId, customerId, startDate, endDate]
+            [carId, customerId, formattedStartDate, formattedEndDate]
         );
 
         // Create payment record
