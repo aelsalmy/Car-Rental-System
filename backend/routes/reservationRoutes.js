@@ -3,11 +3,21 @@ const router = express.Router();
 const pool = require('../config/database');
 const { authenticateToken, authenticateAdmin } = require('../middleware/auth');
 
+// Helper function to format date for MySQL
+function formatDateForMySQL(dateString) {
+    const date = new Date(dateString);
+    return date.toISOString().slice(0, 19).replace('T', ' ');
+}
+
 router.post('/', authenticateToken, async (req, res) => {
     const connection = await pool.getConnection();
     try {
         const { carId, startDate, endDate, paymentMethod, paymentStatus, totalCost } = req.body;
         const userid = req.user.id;
+
+        // Format dates for MySQL
+        const formattedStartDate = formatDateForMySQL(startDate);
+        const formattedEndDate = formatDateForMySQL(endDate);
 
         await connection.beginTransaction();
 
@@ -32,7 +42,7 @@ router.post('/', authenticateToken, async (req, res) => {
                 (endDate BETWEEN ? AND ?) OR
                 (startDate <= ? AND endDate >= ?)
             )`,
-            [carId, startDate, endDate, startDate, endDate, startDate, endDate]
+            [carId, formattedStartDate, formattedEndDate, formattedStartDate, formattedEndDate, formattedStartDate, formattedEndDate]
         );
 
         const [customers] = await connection.execute(
@@ -54,11 +64,11 @@ router.post('/', authenticateToken, async (req, res) => {
 
         const customerId = customers[0].id;
 
-        // Create reservation
+        // Create reservation with pending status
         const [reservationResult] = await connection.execute(
             `INSERT INTO reservations (carId, customerId, startDate, endDate, status, createdAt, updatedAt)
              VALUES (?, ?, ?, ?, 'pending', NOW(), NOW())`,
-            [carId, customerId, startDate, endDate]
+            [carId, customerId, formattedStartDate, formattedEndDate]
         );
 
         // Create payment record
@@ -66,6 +76,12 @@ router.post('/', authenticateToken, async (req, res) => {
             `INSERT INTO payments (reservationId, amount, paymentMethod, paymentStatus, createdAt, updatedAt)
              VALUES (?, ?, ?, ?, NOW(), NOW())`,
             [reservationResult.insertId, totalCost, paymentMethod, paymentStatus]
+        );
+
+        // Update car status to 'reserved'
+        await connection.execute(
+            `UPDATE cars SET status = 'reserved' WHERE id = ?`,
+            [carId]
         );
 
         await connection.commit();
@@ -337,65 +353,39 @@ router.patch('/:id/status', authenticateAdmin, async (req, res) => {
         const { status } = req.body;
         const reservationId = req.params.id;
 
-        await connection.beginTransaction();
+        // Get the current reservation
+        const [currentReservation] = await connection.execute(
+            'SELECT * FROM reservations WHERE id = ?',
+            [reservationId]
+        );
 
-        // Get reservation with car and payment details
-        const [reservations] = await connection.execute(`
-            SELECT r.*, c.id as car_id, p.paymentMethod
-            FROM reservations r
-            LEFT JOIN cars c ON r.carId = c.id
-            LEFT JOIN payments p ON r.id = p.reservationId
-            WHERE r.id = ?
-        `, [reservationId]);
-
-        if (reservations.length === 0) {
-            await connection.rollback();
+        if (currentReservation.length === 0) {
             return res.status(404).json({ message: 'Reservation not found' });
         }
 
-        const reservation = reservations[0];
-
-        // Get today's date at midnight for comparison
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const reservationStart = new Date(reservation.startDate);
-        reservationStart.setHours(0, 0, 0, 0);
-
         // Update reservation status
         await connection.execute(
-            'UPDATE reservations SET status = ?, updatedAt = NOW() WHERE id = ?',
+            'UPDATE reservations SET status = ? WHERE id = ?',
             [status, reservationId]
         );
 
+        // If status is 'active', update car status to 'rented'
         if (status === 'active') {
-            // Update payment status to paid for cash payments
-            if (reservation.paymentMethod === 'cash') {
-                await connection.execute(
-                    'UPDATE payments SET paymentStatus = ?, updatedAt = NOW() WHERE reservationId = ?',
-                    ['paid', reservationId]
-                );
-            }
-
-            // Only set car to rented if today is the start date or after
-            if (today >= reservationStart) {
-                await connection.execute(
-                    'UPDATE cars SET status = ?, updatedAt = NOW() WHERE id = ?',
-                    ['rented', reservation.car_id]
-                );
-            }
+            await connection.execute(
+                'UPDATE cars SET status = ? WHERE id = ?',
+                ['rented', currentReservation[0].carId]
+            );
         }
-        // If completing or cancelling, set car back to active
+        // If status is 'completed' or 'cancelled', update car status to 'active'
         else if (status === 'completed' || status === 'cancelled') {
             await connection.execute(
-                'UPDATE cars SET status = ?, updatedAt = NOW() WHERE id = ?',
-                ['active', reservation.car_id]
+                'UPDATE cars SET status = ? WHERE id = ?',
+                ['active', currentReservation[0].carId]
             );
         }
 
-        await connection.commit();
         res.json({ message: 'Reservation status updated successfully' });
     } catch (error) {
-        await connection.rollback();
         console.error('Error updating reservation status:', error);
         res.status(500).json({ message: 'Error updating reservation status' });
     } finally {

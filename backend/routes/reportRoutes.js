@@ -407,12 +407,14 @@ router.get('/payment', authenticateAdmin, async (req, res) => {
             SELECT 
                 p.id, p.amount, p.paymentMethod, p.paymentStatus, p.updatedAt,
                 r.id as reservationId, r.startDate, r.endDate,
-                c.model, c.year, c.plateId,
-                cust.id as customerId, cust.name as customerName, cust.phone as customerPhone, cust.email as customerEmail
+                c.model, c.year, c.plateId, c.officeId,
+                cust.id as customerId, cust.name as customerName, cust.phone as customerPhone, cust.email as customerEmail,
+                o.id as officeId, o.name as officeName, o.location as officeLocation, o.phone as officePhone
             FROM payments p
             JOIN reservations r ON p.reservationId = r.id
             JOIN cars c ON r.carId = c.id
             JOIN customers cust ON r.customerId = cust.id
+            LEFT JOIN offices o ON c.officeId = o.id
             WHERE p.paymentStatus = 'paid'
         `;
 
@@ -428,7 +430,14 @@ router.get('/payment', authenticateAdmin, async (req, res) => {
             params.push(endDate.split('T')[0]);
         }
 
+        query += ' ORDER BY p.updatedAt DESC';
+
+        console.log('Executing query:', query);
+        console.log('With params:', params);
+
         const [payments] = await connection.query(query, params);
+
+        console.log('Raw payment data:', payments);
 
         // Transform the flat results into nested objects
         const formattedPayments = payments.map(row => ({
@@ -437,15 +446,17 @@ router.get('/payment', authenticateAdmin, async (req, res) => {
             paymentMethod: row.paymentMethod,
             paymentStatus: row.paymentStatus,
             updatedAt: row.updatedAt,
-            Reservation: {
-                id: row.reservationId,
-                startDate: row.startDate,
-                endDate: row.endDate
-            },
             Car: {
                 model: row.model,
                 year: row.year,
-                plateId: row.plateId
+                plateId: row.plateId,
+                officeId: row.officeId,
+                Office: row.officeId ? {
+                    id: row.officeId,
+                    name: row.officeName,
+                    location: row.officeLocation,
+                    phone: row.officePhone
+                } : null
             },
             Customer: {
                 id: row.customerId,
@@ -455,6 +466,7 @@ router.get('/payment', authenticateAdmin, async (req, res) => {
             }
         }));
 
+        console.log('Formatted payments:', JSON.stringify(formattedPayments, null, 2));
         res.json(formattedPayments);
     } catch (error) {
         console.error('Error generating payment report:', error);
