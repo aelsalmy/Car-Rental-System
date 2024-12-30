@@ -104,7 +104,7 @@ export class ReservationService {
             throw new Error('No authentication token found');
         }
 
-        let url = `${this.baseUrl}/reports`;
+        let url = `${this.baseUrl}/reports/reservation`;
         const params = new URLSearchParams();
         
         if (startDate) {
@@ -119,7 +119,8 @@ export class ReservationService {
             url += `?${queryString}`;
         }
 
-        return this.http.get(url + '/reservation', {
+        console.log('Prior to http call')
+        return this.http.get(url, {
             headers: { Authorization: `Bearer ${token}` }
         });
     }

@@ -479,7 +479,7 @@ router.get('/search', authenticateAdmin, async (req, res) => {
         const { startDate, endDate, status, currentlyRented } = req.query;
         
         let query = `
-            SELECT 
+            SELECT DISTINCT
                 r.*,
                 c.*,
                 o.*,
@@ -505,7 +505,7 @@ router.get('/search', authenticateAdmin, async (req, res) => {
 
         if (currentlyRented === 'true') {
             const currentDate = new Date().toISOString().split('T')[0];
-            query += ` AND r.startDate <= ? AND r.endDate >= ? AND r.status = 'active'`;
+            query += ` AND r.startDate <= ? AND r.endDate >= ?`;
             params.push(currentDate, currentDate);
         } else {
             if (startDate && endDate) {
@@ -526,7 +526,7 @@ router.get('/search', authenticateAdmin, async (req, res) => {
         }
 
         query += ` ORDER BY r.startDate DESC`;
-
+        
         const [reservations] = await pool.execute(query, params);
 
         // Format the response to match the previous structure
