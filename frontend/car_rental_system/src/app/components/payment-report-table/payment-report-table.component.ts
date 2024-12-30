@@ -84,7 +84,7 @@ export class PaymentReportTableComponent implements OnChanges, AfterViewInit {
     if (!date) return 'N/A';
     try {
       const d = new Date(date);
-      return `${d.toLocaleDateString()} ${d.toLocaleTimeString()}`;
+      return d.toLocaleDateString();
     } catch (error) {
       console.error('Error formatting date:', error);
       return 'Invalid Date';

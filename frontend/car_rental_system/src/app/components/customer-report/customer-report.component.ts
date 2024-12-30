@@ -134,9 +134,24 @@ export class CustomerReportComponent implements OnInit {
 
   loadReport() {
     const customerId = this.searchForm.get('carId')?.value;
-    const startDate = this.searchForm.get('startDate')?.value;
-    const endDate = this.searchForm.get('endDate')?.value;
+    let startDate = this.searchForm.get('startDate')?.value;
+    let endDate = this.searchForm.get('endDate')?.value;
     const status = this.searchForm.get('status')?.value;
+
+    // Format dates to YYYY-MM-DD format without any time component
+    if (startDate) {
+      const date = new Date(startDate);
+      startDate = date.getFullYear() + '-' + 
+                 String(date.getMonth() + 1).padStart(2, '0') + '-' + 
+                 String(date.getDate()).padStart(2, '0');
+    }
+
+    if (endDate) {
+      const date = new Date(endDate);
+      endDate = date.getFullYear() + '-' + 
+               String(date.getMonth() + 1).padStart(2, '0') + '-' + 
+               String(date.getDate()).padStart(2, '0');
+    }
 
     this.reservationService.getCustomerReport(customerId).subscribe({
       next: (data: ReservationData[]) => {
@@ -144,21 +159,24 @@ export class CustomerReportComponent implements OnInit {
         let filteredData = data;
         
         if (startDate) {
-          const startDateStr = this.formatDate(startDate);
           filteredData = filteredData.filter(item => 
-            this.formatDate(item.startDate) === startDateStr);
+            this.formatDateOnly(item.startDate) === startDate);
         }
         if (endDate) {
-          const endDateStr = this.formatDate(endDate);
           filteredData = filteredData.filter(item => 
-            this.formatDate(item.endDate) === endDateStr);
+            this.formatDateOnly(item.endDate) === endDate);
         }
         if (status) {
           filteredData = filteredData.filter(item => 
             item.status === status);
         }
 
-        this.dataSource.data = filteredData;
+        // Format the dates in the response for display
+        this.dataSource.data = filteredData.map(item => ({
+          ...item,
+          startDate: this.formatDateOnly(item.startDate),
+          endDate: this.formatDateOnly(item.endDate)
+        }));
       },
       error: (error) => {
         console.error('Error loading report:', error);
@@ -166,10 +184,13 @@ export class CustomerReportComponent implements OnInit {
     });
   }
 
-  formatDate(date: string | Date): string {
-    if (!date) return '';
-    const d = date instanceof Date ? date : new Date(date);
-    return d.toISOString().split('T')[0]; // Returns YYYY-MM-DD format
+  // Helper method to format dates consistently
+  formatDateOnly(dateStr: string): string {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    return date.getFullYear() + '-' + 
+           String(date.getMonth() + 1).padStart(2, '0') + '-' + 
+           String(date.getDate()).padStart(2, '0');
   }
 
   applyFilter(event: Event) {
