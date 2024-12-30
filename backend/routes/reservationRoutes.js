@@ -64,7 +64,7 @@ router.post('/', authenticateToken, async (req, res) => {
 
         const customerId = customers[0].id;
 
-        // Create reservation with pending status
+        // Create reservation
         const [reservationResult] = await connection.execute(
             `INSERT INTO reservations (carId, customerId, startDate, endDate, status, createdAt, updatedAt)
              VALUES (?, ?, ?, ?, 'pending', NOW(), NOW())`,
@@ -76,12 +76,6 @@ router.post('/', authenticateToken, async (req, res) => {
             `INSERT INTO payments (reservationId, amount, paymentMethod, paymentStatus, createdAt, updatedAt)
              VALUES (?, ?, ?, ?, NOW(), NOW())`,
             [reservationResult.insertId, totalCost, paymentMethod, paymentStatus]
-        );
-
-        // Update car status to 'reserved'
-        await connection.execute(
-            `UPDATE cars SET status = 'reserved' WHERE id = ?`,
-            [carId]
         );
 
         await connection.commit();
@@ -353,39 +347,65 @@ router.patch('/:id/status', authenticateAdmin, async (req, res) => {
         const { status } = req.body;
         const reservationId = req.params.id;
 
-        // Get the current reservation
-        const [currentReservation] = await connection.execute(
-            'SELECT * FROM reservations WHERE id = ?',
-            [reservationId]
-        );
+        await connection.beginTransaction();
 
-        if (currentReservation.length === 0) {
+        // Get reservation with car and payment details
+        const [reservations] = await connection.execute(`
+            SELECT r.*, c.id as car_id, p.paymentMethod
+            FROM reservations r
+            LEFT JOIN cars c ON r.carId = c.id
+            LEFT JOIN payments p ON r.id = p.reservationId
+            WHERE r.id = ?
+        `, [reservationId]);
+
+        if (reservations.length === 0) {
+            await connection.rollback();
             return res.status(404).json({ message: 'Reservation not found' });
         }
 
+        const reservation = reservations[0];
+
+        // Get today's date at midnight for comparison
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const reservationStart = new Date(reservation.startDate);
+        reservationStart.setHours(0, 0, 0, 0);
+
         // Update reservation status
         await connection.execute(
-            'UPDATE reservations SET status = ? WHERE id = ?',
+            'UPDATE reservations SET status = ?, updatedAt = NOW() WHERE id = ?',
             [status, reservationId]
         );
 
-        // If status is 'active', update car status to 'rented'
         if (status === 'active') {
-            await connection.execute(
-                'UPDATE cars SET status = ? WHERE id = ?',
-                ['rented', currentReservation[0].carId]
-            );
+            // Update payment status to paid for cash payments
+            if (reservation.paymentMethod === 'cash') {
+                await connection.execute(
+                    'UPDATE payments SET paymentStatus = ?, updatedAt = NOW() WHERE reservationId = ?',
+                    ['paid', reservationId]
+                );
+            }
+
+            // Only set car to rented if today is the start date or after
+            if (today >= reservationStart) {
+                await connection.execute(
+                    'UPDATE cars SET status = ?, updatedAt = NOW() WHERE id = ?',
+                    ['rented', reservation.car_id]
+                );
+            }
         }
-        // If status is 'completed' or 'cancelled', update car status to 'active'
+        // If completing or cancelling, set car back to active
         else if (status === 'completed' || status === 'cancelled') {
             await connection.execute(
-                'UPDATE cars SET status = ? WHERE id = ?',
-                ['active', currentReservation[0].carId]
+                'UPDATE cars SET status = ?, updatedAt = NOW() WHERE id = ?',
+                ['active', reservation.car_id]
             );
         }
 
+        await connection.commit();
         res.json({ message: 'Reservation status updated successfully' });
     } catch (error) {
+        await connection.rollback();
         console.error('Error updating reservation status:', error);
         res.status(500).json({ message: 'Error updating reservation status' });
     } finally {
