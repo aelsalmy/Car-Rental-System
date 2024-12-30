@@ -267,12 +267,13 @@ router.get('/status', authenticateAdmin, async (req, res) => {
             if(status === 'active'){
                 let query = `
                     SELECT 
-                        c.id as carId, c.model as model, c.year as modelYear, c.plateId as plateId, 
+                        c.id as carId, c.model as model, c.year as modelYear, c.plateId as plateId, c.status as carStatus,
                         o.id as officeId, o.name as officeName, o.location as officeLocation, o.phone as officePhone
                     FROM cars c
                     LEFT JOIN offices o ON c.officeId = o.id
                     LEFT JOIN reservations r ON r.carId = c.id AND r.status = 'active'
                     WHERE r.id IS NULL  -- No active reservation
+                        AND c.status != 'out_of_service'
                 `;
             
                 // If a specific date is provided, add logic to check availability on that date
@@ -361,6 +362,8 @@ router.get('/customer', authenticateAdmin, async (req, res) => {
     try {
         const { customerId } = req.query;
 
+        let params = [];
+
         let query = `
             SELECT 
                 r.id, r.carId, r.customerId, r.startDate, r.endDate, r.status, r.createdAt, r.updatedAt,
@@ -373,11 +376,16 @@ router.get('/customer', authenticateAdmin, async (req, res) => {
             LEFT JOIN offices o ON c.officeId = o.id
             LEFT JOIN customers cust ON r.customerId = cust.id
             LEFT JOIN payments p ON r.id = p.reservationId
-            WHERE r.customerId = ?
-            ORDER BY r.startDate DESC
         `;
 
-        const [reservations] = await connection.query(query, [customerId]);
+        if(customerId){
+            query += `WHERE r.customerId = ?`;
+            params.push(customerId);
+        }
+
+        query += `ORDER BY r.startDate DESC`;
+
+        const [reservations] = await connection.query(query, params);
 
         // Transform the flat results into nested objects
         const formattedReservations = reservations.map(row => ({

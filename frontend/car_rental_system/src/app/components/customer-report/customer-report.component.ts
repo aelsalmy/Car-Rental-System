@@ -207,7 +207,8 @@ export class CustomerReportComponent implements OnInit {
     this.searchForm.patchValue({
       startDate: null,
       endDate: null,
-      status: ''
+      status: '',
+      carId: ''
     });
     this.loadReport();
   }
