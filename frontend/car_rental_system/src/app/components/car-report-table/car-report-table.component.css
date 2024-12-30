@@ -68,6 +68,11 @@ table {
     background-color: #fbe9e7;
     color: #c62828;
 }
+
+.status-badge.out_of_service {
+    background-color: #fbe9e7;
+    color: #c62828;
+}
   
 .car-details, .customer-email, .office-location, .payment-status {
     font-size: 12px;

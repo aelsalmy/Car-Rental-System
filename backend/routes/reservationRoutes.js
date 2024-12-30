@@ -1,92 +1,97 @@
 const express = require('express');
 const router = express.Router();
-const { Car, Reservation, Office, Customer, Payment } = require('../models/carModels');
-const { authenticateToken , authenticateAdmin} = require('../middleware/auth');
-const sequelize = require('../config/database');
-const { Op, Sequelize } = require('sequelize');
+const pool = require('../config/database');
+const { authenticateToken, authenticateAdmin } = require('../middleware/auth');
 
-router.post('/', authenticateToken, async (req, res) => {           //route to insert a reservation
+// Helper function to format date for MySQL
+function formatDateForMySQL(dateString) {
+    const date = new Date(dateString);
+    return date.toISOString().slice(0, 19).replace('T', ' ');
+}
+
+router.post('/', authenticateToken, async (req, res) => {
+    const connection = await pool.getConnection();
     try {
         const { carId, startDate, endDate, paymentMethod, paymentStatus, totalCost } = req.body;
         const userid = req.user.id;
 
-        // Check if car exists and is available
-        const car = await Car.findOne({
-            where: { id: carId }
-        });
+        // Format dates for MySQL
+        const formattedStartDate = formatDateForMySQL(startDate);
+        const formattedEndDate = formatDateForMySQL(endDate);
 
-        if (!car) {
+        await connection.beginTransaction();
+
+        // Check if car exists and is available
+        const [cars] = await connection.execute(
+            'SELECT * FROM cars WHERE id = ?',
+            [carId]
+        );
+
+        if (cars.length === 0) {
+            await connection.rollback();
             return res.status(404).json({ message: 'Car not available' });
         }
 
         // Check for overlapping reservations
-        const overlapping = await Reservation.findOne({
-            where: {
-                carId,
-                status: {
-                    [Op.notIn]: ['cancelled', 'completed']
-                },
-                [Op.or]: [
-                    {
-                        startDate: { [Op.between]: [startDate, endDate] }
-                    },
-                    {
-                        endDate: { [Op.between]: [startDate, endDate] }
-                    },
-                    {
-                        [Op.and]: [
-                            { startDate: { [Op.lte]: startDate } },
-                            { endDate: { [Op.gte]: endDate } }
-                        ]
-                    }
-                ]
-            }
-        });
+        const [overlapping] = await connection.execute(`
+            SELECT * FROM reservations 
+            WHERE carId = ? 
+            AND status NOT IN ('cancelled', 'completed')
+            AND (
+                (startDate BETWEEN ? AND ?) OR
+                (endDate BETWEEN ? AND ?) OR
+                (startDate <= ? AND endDate >= ?)
+            )`,
+            [carId, formattedStartDate, formattedEndDate, formattedStartDate, formattedEndDate, formattedStartDate, formattedEndDate]
+        );
 
-        const customer = await Customer.findOne({
-            where: { userId: userid }
-        });
+        const [customers] = await connection.execute(
+            'SELECT * FROM customers WHERE userId = ?',
+            [userid]
+        );
 
-        if (overlapping) {
+        if (overlapping.length > 0) {
+            await connection.rollback();
             return res.status(400).json({ 
-                message: `This car is already reserved for these dates. Please end your reservation before ${new Date(overlapping.startDate).toLocaleDateString()}` 
+                message: `This car is already reserved for these dates. Please end your reservation before ${new Date(overlapping[0].startDate).toLocaleDateString()}` 
             });
         }
 
-        if (!customer) {
+        if (customers.length === 0) {
+            await connection.rollback();
             return res.status(404).json({ message: 'Customer profile not found' });
         }
 
-        const customerId = customer.id;
-                
-        // Create reservation and payment record in a transaction
-        const result = await sequelize.transaction(async (t) => {
-            // Create the reservation
+        const customerId = customers[0].id;
 
-            const reservation = await Reservation.create({
-                carId,
-                customerId,
-                startDate,
-                endDate,
-                status: 'pending',
-                totalCost
-            }, { transaction: t });
+        // Create reservation
+        const [reservationResult] = await connection.execute(
+            `INSERT INTO reservations (carId, customerId, startDate, endDate, status, createdAt, updatedAt)
+             VALUES (?, ?, ?, ?, 'pending', NOW(), NOW())`,
+            [carId, customerId, formattedStartDate, formattedEndDate]
+        );
 
-            // Create the payment record
-            await Payment.create({
-                reservationId: reservation.id,
-                amount: totalCost,
-                paymentMethod,
-                paymentStatus
-            }, { transaction: t });
-            console.log('Finished Transaction');
-            return reservation;
-        });
+        // Create payment record
+        await connection.execute(
+            `INSERT INTO payments (reservationId, amount, paymentMethod, paymentStatus, createdAt, updatedAt)
+             VALUES (?, ?, ?, ?, NOW(), NOW())`,
+            [reservationResult.insertId, totalCost, paymentMethod, paymentStatus]
+        );
 
-        res.status(201).json(result);
+        await connection.commit();
+
+        const [newReservation] = await connection.execute(
+            'SELECT * FROM reservations WHERE id = ?',
+            [reservationResult.insertId]
+        );
+
+        res.status(201).json(newReservation[0]);
     } catch (error) {
+        await connection.rollback();
         console.error('Error creating reservation:', error);
         res.status(500).json({ message: 'Error creating reservation: ' + error.message });
+    } finally {
+        connection.release();
     }
 });
 
@@ -95,32 +100,76 @@ router.get('/my', authenticateToken, async (req, res) => {
         const userId = req.user.id;
 
         // Get the customer ID associated with the user
-        const customer = await Customer.findOne({
-            where: { userId: userId }
-        });
+        const [customers] = await pool.execute(
+            'SELECT * FROM customers WHERE userId = ?',
+            [userId]
+        );
 
-        if (!customer) {
+        if (customers.length === 0) {
             return res.status(404).json({ message: 'Customer profile not found' });
         }
 
-        const customerId = customer.id;
+        const customerId = customers[0].id;
 
-        const reservations = await Reservation.findAll({
-            where: { customerId: customerId },
-            include: [
-                {
-                    model: Car,
-                    include: [Office]
-                },
-                {
-                    model: Payment,
-                    attributes: ['amount', 'paymentMethod', 'paymentStatus']
+        const [reservations] = await pool.execute(`
+            SELECT 
+                r.*,
+                c.*,
+                o.*,
+                r.status as reservStatus,
+                p.amount as payment_amount,
+                p.paymentMethod as payment_method,
+                p.paymentStatus as payment_status,
+                c.id as car_id,
+                o.id as office_id,
+                r.id as reservation_id
+            FROM reservations r
+            LEFT JOIN cars c ON r.carId = c.id
+            LEFT JOIN offices o ON c.officeId = o.id
+            LEFT JOIN payments p ON r.id = p.reservationId
+            WHERE r.customerId = ?
+            ORDER BY r.createdAt DESC
+        `, [customerId]);
+
+        // Format the response to match the previous structure
+        const formattedReservations = reservations.map(reservation => ({
+            id: reservation.reservation_id,
+            carId: reservation.car_id,
+            customerId: reservation.customerId,
+            startDate: reservation.startDate,
+            endDate: reservation.endDate,
+            status: reservation.reservStatus,
+            createdAt: reservation.createdAt,
+            updatedAt: reservation.updatedAt,
+            Car: {
+                id: reservation.car_id,
+                model: reservation.model,
+                year: reservation.year,
+                plateId: reservation.plateId,
+                status: reservation.status,
+                officeId: reservation.officeId,
+                dailyRate: reservation.dailyRate,
+                category: reservation.category,
+                transmission: reservation.transmission,
+                fuelType: reservation.fuelType,
+                seatingCapacity: reservation.seatingCapacity,
+                features: reservation.features,
+                description: reservation.description,
+                Office: {
+                    id: reservation.office_id,
+                    name: reservation.name,
+                    location: reservation.location,
+                    phone: reservation.phone
                 }
-            ],
-            order: [['createdAt', 'DESC']]
-        });
+            },
+            Payment: {
+                amount: reservation.payment_amount,
+                paymentMethod: reservation.payment_method,
+                paymentStatus: reservation.payment_status
+            }
+        }));
 
-        res.json(reservations);
+        res.json(formattedReservations);
     } catch (error) {
         console.error('Error fetching reservations:', error);
         res.status(500).json({ message: 'Failed to fetch reservations' });
@@ -128,104 +177,195 @@ router.get('/my', authenticateToken, async (req, res) => {
 });
 
 router.patch('/:id/cancel', authenticateToken, async (req, res) => {
+    const connection = await pool.getConnection();
     try {
         const userId = req.user.id;
 
-        // Get the customer ID associated with the user
-        const customer = await Customer.findOne({
-            where: { userId: userId }
-        });
+        await connection.beginTransaction();
 
-        if (!customer) {
+        // Get the customer ID associated with the user
+        const [customers] = await connection.execute(
+            'SELECT * FROM customers WHERE userId = ?',
+            [userId]
+        );
+
+        if (customers.length === 0) {
+            await connection.rollback();
             return res.status(404).json({ message: 'Customer profile not found' });
         }
 
-        const customerId = customer.id;
+        const customerId = customers[0].id;
 
-        const reservation = await Reservation.findOne({
-            where: {
-                id: req.params.id,
-                customerId: customerId
-            }
-        });
+        const [reservations] = await connection.execute(
+            'SELECT * FROM reservations WHERE id = ? AND customerId = ?',
+            [req.params.id, customerId]
+        );
 
-        if (!reservation) {
+        if (reservations.length === 0) {
+            await connection.rollback();
             return res.status(404).json({ message: 'Reservation not found' });
         }
 
+        const reservation = reservations[0];
+
         if (reservation.status !== 'pending' && reservation.status !== 'active') {
+            await connection.rollback();
             return res.status(400).json({ message: 'Cannot cancel this reservation' });
         }
 
-        reservation.status = 'cancelled';
-        await reservation.save();
+        await connection.execute(
+            'UPDATE reservations SET status = ?, updatedAt = NOW() WHERE id = ?',
+            ['cancelled', req.params.id]
+        );
 
-        res.json(reservation);
+        await connection.commit();
+
+        const [updatedReservation] = await connection.execute(
+            'SELECT * FROM reservations WHERE id = ?',
+            [req.params.id]
+        );
+
+        res.json(updatedReservation[0]);
     } catch (error) {
+        await connection.rollback();
         console.error('Error cancelling reservation:', error);
         res.status(500).json({ message: 'Failed to cancel reservation' });
+    } finally {
+        connection.release();
     }
 });
 
 router.delete('/:id/delete', authenticateToken, async (req, res) => {
+    const connection = await pool.getConnection();
     try {
-        await Reservation.destroy({
-            where: {
-                id: req.params.id,
-                customerId: req.user.id
-            }
-        })
+        await connection.beginTransaction();
 
-        if (!reservation) {
+        const [reservations] = await connection.execute(
+            'SELECT * FROM reservations WHERE id = ? AND customerId = ?',
+            [req.params.id, req.user.id]
+        );
+
+        if (reservations.length === 0) {
+            await connection.rollback();
             return res.status(404).json({ message: 'Reservation not found' });
         }
 
-        res.json(reservation);
+        await connection.execute(
+            'DELETE FROM reservations WHERE id = ? AND customerId = ?',
+            [req.params.id, req.user.id]
+        );
+
+        await connection.commit();
+        res.json({ message: 'Reservation deleted successfully' });
     } catch (error) {
+        await connection.rollback();
         console.error('Error deleting reservation:', error);
         res.status(500).json({ message: 'Failed to delete reservation' + error});
+    } finally {
+        connection.release();
     }
 });
 
 router.get('/getAll', authenticateAdmin, async (req, res) => {
     try {
-        const reservations = await Reservation.findAll({
-            include: [
-                {
-                    model: Car,
-                    include: [Office]
-                },
-                {
-                    model: Customer,
-                    attributes: ['name', 'email', 'phone', 'address']
-                },
-                {
-                    model: Payment,
-                    attributes: ['amount', 'paymentMethod', 'paymentStatus']
+        const [reservations] = await pool.execute(`
+            SELECT 
+                r.*,
+                c.*,
+                o.*,
+                r.status as reserv_status,
+                cu.name as customer_name,
+                cu.email as customer_email,
+                cu.phone as customer_phone,
+                cu.address as customer_address,
+                p.amount as payment_amount,
+                p.paymentMethod as payment_method,
+                p.paymentStatus as payment_status,
+                c.id as car_id,
+                o.id as office_id,
+                r.id as reservation_id
+            FROM reservations r
+            LEFT JOIN cars c ON r.carId = c.id
+            LEFT JOIN offices o ON c.officeId = o.id
+            LEFT JOIN customers cu ON r.customerId = cu.id
+            LEFT JOIN payments p ON r.id = p.reservationId
+            ORDER BY r.createdAt DESC
+        `);
+
+        // Format the response to match the previous structure
+        const formattedReservations = reservations.map(reservation => ({
+            id: reservation.reservation_id,
+            carId: reservation.car_id,
+            customerId: reservation.customerId,
+            startDate: reservation.startDate,
+            endDate: reservation.endDate,
+            status: reservation.reserv_status,
+            createdAt: reservation.createdAt,
+            updatedAt: reservation.updatedAt,
+            Car: {
+                id: reservation.car_id,
+                model: reservation.model,
+                year: reservation.year,
+                plateId: reservation.plateId,
+                status: reservation.status,
+                officeId: reservation.officeId,
+                dailyRate: reservation.dailyRate,
+                category: reservation.category,
+                transmission: reservation.transmission,
+                fuelType: reservation.fuelType,
+                seatingCapacity: reservation.seatingCapacity,
+                features: reservation.features,
+                description: reservation.description,
+                Office: {
+                    id: reservation.office_id,
+                    name: reservation.name,
+                    location: reservation.location,
+                    phone: reservation.phone
                 }
-            ],
-            order: [['createdAt', 'DESC']]
-        });
-        res.json(reservations);
+            },
+            Customer: {
+                name: reservation.customer_name,
+                email: reservation.customer_email,
+                phone: reservation.customer_phone,
+                address: reservation.customer_address
+            },
+            Payment: {
+                amount: reservation.payment_amount,
+                paymentMethod: reservation.payment_method,
+                paymentStatus: reservation.payment_status
+            }
+        }));
+        
+        res.json(formattedReservations);
     } catch (error) {
         console.error('Error fetching all reservations:', error);
         res.status(500).json({ message: 'Failed to fetch reservations' });
     }
 });
 
-// Update reservation status endpoint
 router.patch('/:id/status', authenticateAdmin, async (req, res) => {
+    const connection = await pool.getConnection();
     try {
         const { status } = req.body;
         const reservationId = req.params.id;
 
-        const reservation = await Reservation.findByPk(reservationId, {
-            include: [Car, Payment]
-        });
+        await connection.beginTransaction();
 
-        if (!reservation) {
+        // Get reservation with car and payment details
+        const [reservations] = await connection.execute(`
+            SELECT r.*, c.id as car_id, p.paymentMethod
+            FROM reservations r
+            LEFT JOIN cars c ON r.carId = c.id
+            LEFT JOIN payments p ON r.id = p.reservationId
+            WHERE r.id = ?
+        `, [reservationId]);
+
+        if (reservations.length === 0) {
+            await connection.rollback();
             return res.status(404).json({ message: 'Reservation not found' });
         }
+
+        const reservation = reservations[0];
 
         // Get today's date at midnight for comparison
         const today = new Date();
@@ -233,158 +373,205 @@ router.patch('/:id/status', authenticateAdmin, async (req, res) => {
         const reservationStart = new Date(reservation.startDate);
         reservationStart.setHours(0, 0, 0, 0);
 
-        // Update reservation and car status
-        await sequelize.transaction(async (t) => {
-            await reservation.update({ status }, { transaction: t });
-            
-            // If activating reservation, only update car status if today is the start date
-            if (status === 'active') {
-                // Update payment status to paid for cash payments
-                if (reservation.Payment.paymentMethod === 'cash') {
-                    await Payment.update(
-                        { paymentStatus: 'paid' },
-                        { 
-                            where: { reservationId: reservation.id },
-                            transaction: t 
-                        }
-                    );
-                }
+        // Update reservation status
+        await connection.execute(
+            'UPDATE reservations SET status = ?, updatedAt = NOW() WHERE id = ?',
+            [status, reservationId]
+        );
 
-                // Only set car to rented if today is the start date or after
-                if (today >= reservationStart) {
-                    await Car.update(
-                        { status: 'rented' },
-                        { 
-                            where: { id: reservation.carId },
-                            transaction: t 
-                        }
-                    );
-                }
-            }
-            // If completing or cancelling, set car back to active
-            else if (status === 'completed' || status === 'cancelled') {
-                await Car.update(
-                    { status: 'active' },
-                    { 
-                        where: { id: reservation.carId },
-                        transaction: t 
-                    }
+        if (status === 'active') {
+            // Update payment status to paid for cash payments
+            if (reservation.paymentMethod === 'cash') {
+                await connection.execute(
+                    'UPDATE payments SET paymentStatus = ?, updatedAt = NOW() WHERE reservationId = ?',
+                    ['paid', reservationId]
                 );
             }
-        });
 
+            // Only set car to rented if today is the start date or after
+            if (today >= reservationStart) {
+                await connection.execute(
+                    'UPDATE cars SET status = ?, updatedAt = NOW() WHERE id = ?',
+                    ['rented', reservation.car_id]
+                );
+            }
+        }
+        // If completing or cancelling, set car back to active
+        else if (status === 'completed' || status === 'cancelled') {
+            await connection.execute(
+                'UPDATE cars SET status = ?, updatedAt = NOW() WHERE id = ?',
+                ['active', reservation.car_id]
+            );
+        }
+
+        await connection.commit();
         res.json({ message: 'Reservation status updated successfully' });
     } catch (error) {
+        await connection.rollback();
         console.error('Error updating reservation status:', error);
         res.status(500).json({ message: 'Error updating reservation status' });
+    } finally {
+        connection.release();
     }
 });
 
-// Add new route to handle setting car to out of service by admin
 router.patch('/car/:carId/status', authenticateAdmin, async (req, res) => {
+    const connection = await pool.getConnection();
     try {
         const { carId } = req.params;
         const { status } = req.body;
 
+        await connection.beginTransaction();
+
         // Only allow setting to out_of_service
         if (status !== 'out_of_service') {
+            await connection.rollback();
             return res.status(400).json({ message: 'Can only set cars to out of service status' });
         }
 
         // Check for active reservations
-        const activeReservation = await Reservation.findOne({
-            where: {
-                carId,
-                status: ['pending', 'active'],
-                startDate: { [Op.lte]: new Date() },
-                endDate: { [Op.gt]: new Date() }
-            }
-        });
+        const [activeReservations] = await connection.execute(`
+            SELECT * FROM reservations 
+            WHERE carId = ? 
+            AND status IN ('pending', 'active')
+            AND startDate <= NOW()
+            AND endDate > NOW()
+        `, [carId]);
 
-        if (activeReservation) {
+        if (activeReservations.length > 0) {
+            await connection.rollback();
             return res.status(400).json({ 
                 message: 'Cannot update car status - there is an active reservation until ' + 
-                        new Date(activeReservation.endDate).toLocaleDateString() 
+                        new Date(activeReservations[0].endDate).toLocaleDateString() 
             });
         }
 
-        // Update car status
-        const car = await Car.findByPk(carId);
-        if (!car) {
+        // Check if car exists
+        const [cars] = await connection.execute(
+            'SELECT * FROM cars WHERE id = ?',
+            [carId]
+        );
+
+        if (cars.length === 0) {
+            await connection.rollback();
             return res.status(404).json({ message: 'Car not found' });
         }
 
-        await car.update({ status: 'out_of_service' });
+        // Update car status
+        await connection.execute(
+            'UPDATE cars SET status = ?, updatedAt = NOW() WHERE id = ?',
+            ['out_of_service', carId]
+        );
+
+        await connection.commit();
         res.json({ message: 'Car status updated to out of service' });
     } catch (error) {
+        await connection.rollback();
         console.error('Error updating car status:', error);
         res.status(500).json({ message: 'Error updating car status' });
+    } finally {
+        connection.release();
     }
 });
 
-// Search reservations endpoint
 router.get('/search', authenticateAdmin, async (req, res) => {
     try {
         const { startDate, endDate, status, currentlyRented } = req.query;
-        
-        // Build where clause
-        const whereClause = {};
-        
+                
+        let query = `
+            SELECT DISTINCT
+                r.*,
+                c.*,
+                o.*,
+                r.status as reservStatus,
+                cu.name as customer_name,
+                cu.email as customer_email,
+                cu.phone as customer_phone,
+                cu.address as customer_address,
+                p.amount as payment_amount,
+                p.paymentMethod as payment_method,
+                p.paymentStatus as payment_status,
+                c.id as car_id,
+                o.id as office_id,
+                r.id as reservation_id
+            FROM reservations r
+            LEFT JOIN cars c ON r.carId = c.id
+            LEFT JOIN offices o ON c.officeId = o.id
+            LEFT JOIN customers cu ON r.customerId = cu.id
+            LEFT JOIN payments p ON r.id = p.reservationId
+            WHERE 1=1
+        `;
+        const params = [];
+
         if (currentlyRented === 'true') {
             const currentDate = new Date().toISOString().split('T')[0];
-            
-            // First, find all cars that are currently rented
-            const currentlyRentedCars = await Reservation.findAll({
-                where: {
-                    startDate: { [Op.lte]: currentDate },
-                    endDate: { [Op.gte]: currentDate },
-                    status: 'active'
-                },
-                attributes: ['carId'],
-                raw: true
-            });
-            
-            // Get all car IDs (including duplicates)
-            const carIds = currentlyRentedCars.map(r => r.carId);
-            
-            // Now get all reservations for these cars
-            whereClause.carId = { [Op.in]: carIds };
+            query += ` AND r.startDate <= ? AND r.endDate >= ?`;
+            params.push(currentDate, currentDate);
         } else {
-            // Regular search filters
-            if (startDate && endDate) {
-                whereClause.startDate = startDate;
-                whereClause.endDate = endDate;
-            } else if (startDate) {
-                whereClause.startDate = startDate;
-            } else if (endDate) {
-                whereClause.endDate = endDate;
+            if (startDate) {
+                query += ` AND (DATE(r.startDate) = DATE(?) OR DATE(r.endDate) = DATE(?))`;
+                params.push(startDate, startDate);
+            }
+            if (endDate) {
+                query += ` AND (DATE(r.startDate) = DATE(?) OR DATE(r.endDate) = DATE(?))`;
+                params.push(endDate, endDate);
             }
             
             if (status) {
-                whereClause.status = status;
+                query += ` AND r.status = ?`;
+                params.push(status);
             }
         }
 
-        const reservations = await Reservation.findAll({
-            where: whereClause,
-            include: [
-                {
-                    model: Car,
-                    include: [Office]
-                },
-                {
-                    model: Customer,
-                    attributes: ['name', 'email', 'phone', 'address']
-                },
-                {
-                    model: Payment,
-                    attributes: ['amount', 'paymentMethod', 'paymentStatus']
-                }
-            ],
-            order: [['startDate', 'DESC']]
-        });
+        query += ` ORDER BY r.startDate DESC`;
+        
+        const [reservations] = await pool.execute(query, params);
 
-        res.json(reservations);
+        // Format the response to match the previous structure
+        const formattedReservations = reservations.map(reservation => ({
+            id: reservation.reservation_id,
+            carId: reservation.car_id,
+            customerId: reservation.customerId,
+            startDate: reservation.startDate,
+            endDate: reservation.endDate,
+            status: reservation.reservStatus,
+            createdAt: reservation.createdAt,
+            updatedAt: reservation.updatedAt,
+            Car: {
+                id: reservation.car_id,
+                model: reservation.model,
+                year: reservation.year,
+                plateId: reservation.plateId,
+                status: reservation.status,
+                officeId: reservation.officeId,
+                dailyRate: reservation.dailyRate,
+                category: reservation.category,
+                transmission: reservation.transmission,
+                fuelType: reservation.fuelType,
+                seatingCapacity: reservation.seatingCapacity,
+                features: reservation.features,
+                description: reservation.description,
+                Office: {
+                    id: reservation.office_id,
+                    name: reservation.name,
+                    location: reservation.location,
+                    phone: reservation.phone
+                }
+            },
+            Customer: {
+                name: reservation.customer_name,
+                email: reservation.customer_email,
+                phone: reservation.customer_phone,
+                address: reservation.customer_address
+            },
+            Payment: {
+                amount: reservation.payment_amount,
+                paymentMethod: reservation.payment_method,
+                paymentStatus: reservation.payment_status
+            }
+        }));
+
+        res.json(formattedReservations);
     } catch (error) {
         console.error('Error searching reservations:', error);
         res.status(500).json({ message: 'Failed to search reservations' });
@@ -393,9 +580,9 @@ router.get('/search', authenticateAdmin, async (req, res) => {
 
 router.get('/customers', authenticateAdmin, async (req, res) => {
     try {
-        const customers = await Customer.findAll({
-            order: [['createdAt', 'DESC']]
-        });
+        const [customers] = await pool.execute(
+            'SELECT * FROM customers ORDER BY createdAt DESC'
+        );
         res.json(customers);
     } catch (error) {
         console.error('Error fetching all customers:', error);

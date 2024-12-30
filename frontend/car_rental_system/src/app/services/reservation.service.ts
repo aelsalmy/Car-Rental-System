@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, throwError, tap, catchError } from 'rxjs';
 import { LoginService } from './login.service';
 
 @Injectable({
@@ -104,7 +104,7 @@ export class ReservationService {
             throw new Error('No authentication token found');
         }
 
-        let url = `${this.baseUrl}/reports`;
+        let url = `${this.baseUrl}/reports/reservation`;
         const params = new URLSearchParams();
         
         if (startDate) {
@@ -119,7 +119,8 @@ export class ReservationService {
             url += `?${queryString}`;
         }
 
-        return this.http.get(url + '/reservation', {
+        console.log('Prior to http call')
+        return this.http.get(url, {
             headers: { Authorization: `Bearer ${token}` }
         });
     }
@@ -212,6 +213,12 @@ export class ReservationService {
 
         return this.http.get(url, {
             headers: { Authorization: `Bearer ${token}` }
-        });
+        }).pipe(
+            tap(response => console.log('Payment Report API Response:', response)),
+            catchError(error => {
+                console.error('Payment Report API Error:', error);
+                return throwError(() => error);
+            })
+        );
     }
 }

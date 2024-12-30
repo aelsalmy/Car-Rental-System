@@ -58,7 +58,7 @@ export class ReservationStatusDialogComponent {
       case 'pending':
         this.availableStatuses = [
           { value: 'pending', label: 'Pending' },
-          { value: 'active', label: 'Pick Up' }
+          { value: 'active', label: 'Approve' }
         ];
         break;
       case 'active':
@@ -69,7 +69,7 @@ export class ReservationStatusDialogComponent {
           ];
         } else {
           this.availableStatuses = [
-            { value: 'active', label: 'Active' }
+            { value: 'active', label: 'Active' },
           ];
         }
         break;

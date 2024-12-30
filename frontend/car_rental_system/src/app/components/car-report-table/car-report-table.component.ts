@@ -35,10 +35,10 @@ export class CarReportTableComponent {
     this.dataSource.sort = this.sort;
   }
 
-    // Format date to show exact input date and time
+    // Format date to show only the date part
     formatDate(date: string): string {
       if (!date) return '';
       const d = new Date(date);
-      return `${d.toLocaleDateString()} ${d.toLocaleTimeString()}`;
+      return d.toLocaleDateString();
     }  
 }

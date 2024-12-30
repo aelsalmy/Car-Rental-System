@@ -60,7 +60,7 @@ export class CarListingComponent implements OnInit {
         { value: 'luxury', label: 'Luxury' },
         { value: 'compact', label: 'Compact' },
         { value: 'van', label: 'Van' },
-        { value: 'pickup', label: 'Pickup Truck' }
+        { value: 'pickup', label: 'Pickup' }
     ];
 
     readonly transmissions = [

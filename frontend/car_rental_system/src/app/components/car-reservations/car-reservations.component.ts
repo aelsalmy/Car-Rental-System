@@ -98,15 +98,15 @@ export class CarReservationsComponent implements OnInit {
     }
 
     search() {
-        const searchParams = this.searchForm.value;
+        const searchParams = { ...this.searchForm.value };
         
         if (!searchParams.currentlyRented) {
             // Convert dates to YYYY-MM-DD format if they exist
             if (searchParams.startDate) {
-                searchParams.startDate = this.formatDate(searchParams.startDate);
+                searchParams.startDate = this.formatDateOnly(searchParams.startDate);
             }
             if (searchParams.endDate) {
-                searchParams.endDate = this.formatDate(searchParams.endDate);
+                searchParams.endDate = this.formatDateOnly(searchParams.endDate);
             }
         }
 
@@ -121,11 +121,14 @@ export class CarReservationsComponent implements OnInit {
         });
     }
 
-    private formatDate(date: Date): string {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
+    private formatDateOnly(dateStr: string | Date): string {
+        if (!dateStr) return '';
+        const date = new Date(dateStr);
+        if (isNaN(date.getTime())) return ''; // Return empty string for invalid dates
+        
+        return date.getFullYear() + '-' + 
+               String(date.getMonth() + 1).padStart(2, '0') + '-' + 
+               String(date.getDate()).padStart(2, '0');
     }
 
     resetSearch() {

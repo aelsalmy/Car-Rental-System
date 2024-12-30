@@ -60,9 +60,13 @@ export class StatusReportComponent implements OnInit {
         (data.model || '').toLowerCase().includes(searchStr) ||
         (data.plateId || '').toLowerCase().includes(searchStr) ||
         (data.category || '').toLowerCase().includes(searchStr) ||
+        (data.year || '').toString().toLowerCase().includes(searchStr) ||
         // Office details
         (data.Office?.name || '').toLowerCase().includes(searchStr) ||
-        (data.Office?.location || '').toLowerCase().includes(searchStr)
+        (data.Office?.location || '').toLowerCase().includes(searchStr) ||
+        (data.Customer?.name || '').toLowerCase().includes(searchStr) ||
+        (data.Customer?.phone || '').toLowerCase().includes(searchStr) ||
+        (data.Customer?.email || '').toLowerCase().includes(searchStr)
       );
     };
   }
@@ -79,23 +83,42 @@ export class StatusReportComponent implements OnInit {
 
   loadReport() {
     const status = this.searchForm.get('carId')?.value;
-    const startDate = this.searchForm.get('startDate')?.value;
+    let startDate = this.searchForm.get('startDate')?.value;
 
     this.statusParam = status;
 
-    const date = startDate ? new Date(startDate).toISOString() : undefined;
+    // Format date to YYYY-MM-DD format without any time component
+    if (startDate) {
+      const date = new Date(startDate);
+      startDate = date.getFullYear() + '-' + 
+                 String(date.getMonth() + 1).padStart(2, '0') + '-' + 
+                 String(date.getDate()).padStart(2, '0');
+    }
 
-    console.log('Date: ' + date + ' Status: ' + status)
+    console.log('Date: ' + startDate + ' Status: ' + status);
     
-    this.carService.getStatusReport(status , date).subscribe({
+    this.carService.getStatusReport(status, startDate).subscribe({
       next: (data: any) => {
         console.log('Get Cars by Status Report: ', JSON.stringify(data, null, 2));
-        this.dataSource.data = data;
+        // Format any dates in the response data
+        this.dataSource.data = data.map((item: any) => ({
+          ...item,
+          startDate: this.formatDateOnly(item.startDate),
+          endDate: this.formatDateOnly(item.endDate)
+        }));
       },
       error: (error: any) => {
         console.error('Error loading report:', error);
       }
     });
+  }
+
+  formatDateOnly(dateStr: string): string {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    return date.getFullYear() + '-' + 
+           String(date.getMonth() + 1).padStart(2, '0') + '-' + 
+           String(date.getDate()).padStart(2, '0');
   }
 
   applyFilter(event: Event) {
