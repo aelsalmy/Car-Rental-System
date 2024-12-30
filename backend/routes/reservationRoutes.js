@@ -116,6 +116,7 @@ router.get('/my', authenticateToken, async (req, res) => {
                 r.*,
                 c.*,
                 o.*,
+                r.status as reservStatus,
                 p.amount as payment_amount,
                 p.paymentMethod as payment_method,
                 p.paymentStatus as payment_status,
@@ -137,7 +138,7 @@ router.get('/my', authenticateToken, async (req, res) => {
             customerId: reservation.customerId,
             startDate: reservation.startDate,
             endDate: reservation.endDate,
-            status: reservation.status,
+            status: reservation.reservStatus,
             createdAt: reservation.createdAt,
             updatedAt: reservation.updatedAt,
             Car: {
