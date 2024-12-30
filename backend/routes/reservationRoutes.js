@@ -483,6 +483,7 @@ router.get('/search', authenticateAdmin, async (req, res) => {
                 r.*,
                 c.*,
                 o.*,
+                r.status as reservStatus,
                 cu.name as customer_name,
                 cu.email as customer_email,
                 cu.phone as customer_phone,
@@ -535,7 +536,7 @@ router.get('/search', authenticateAdmin, async (req, res) => {
             customerId: reservation.customerId,
             startDate: reservation.startDate,
             endDate: reservation.endDate,
-            status: reservation.status,
+            status: reservation.reservStatus,
             createdAt: reservation.createdAt,
             updatedAt: reservation.updatedAt,
             Car: {
