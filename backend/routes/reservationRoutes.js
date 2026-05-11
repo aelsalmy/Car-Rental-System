@@ -53,7 +53,7 @@ router.post('/', authenticateToken, async (req, res) => {
         if (overlapping.length > 0) {
             await connection.rollback();
             return res.status(400).json({ 
-                message: `This car is already reserved for these dates. Please end your reservation before ${new Date(overlapping[0].startDate).toLocaleDateString()}` 
+                message: `This car is already reserved for these dates.` 
             });
         }
 

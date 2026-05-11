@@ -7,6 +7,7 @@ const officeRoutes = require('./routes/officeRoutes.js')
 const reservationRoutes = require('./routes/reservationRoutes.js')
 const reportRoutes = require('./routes/reportRoutes.js')
 const pool = require('./config/database')
+const createTables = require('./config/createTables')
 const cors = require('cors')
 
 const app = express()
@@ -28,11 +29,10 @@ console.log('JWT_SECRET loaded:', !!process.env.JWT_SECRET);
 
 // Test database connection
 pool.getConnection()
-    .then(connection => {
+    .then(async connection => {
         console.log('Database connection established successfully');
         connection.release();
-        
-        // Start the server after confirming database connection
+        await createTables();
         app.listen(process.env.PORT, () => {
             console.log('Server Listening to port: ' + process.env.PORT)
         });
