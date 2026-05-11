@@ -232,10 +232,14 @@ export class CarListingComponent implements OnInit {
     }
 
     openCarDetails(car: any) {
+        if(typeof car.features === 'string'){
+            car.features = JSON.parse(car.features);
+        }
+        console.log('car is:' , car)
         this.dialog.open(CarDetailsDialogComponent, {
             data: car,
             width: '600px',
-            maxHeight: '90vh'
+            maxHeight: '90vh',
         });
     }
 }

@@ -85,6 +85,14 @@ export class ReservationComponent implements OnInit {
         if (this.reservationForm.valid) {
             const startDate = new Date(this.reservationForm.value.startDate);
             const endDate = new Date(this.reservationForm.value.endDate);
+
+            const startDateFormatted = startDate.getFullYear() + '-' + 
+                 String(startDate.getMonth() + 1).padStart(2, '0') + '-' + 
+                 String(startDate.getDate()).padStart(2, '0');
+
+            const endDateFormatted = endDate.getFullYear() + '-' + 
+                 String(endDate.getMonth() + 1).padStart(2, '0') + '-' + 
+                 String(endDate.getDate()).padStart(2, '0');
             
             // Validate dates
             const today = new Date();
@@ -108,8 +116,8 @@ export class ReservationComponent implements OnInit {
             this.router.navigate(['/payment'], {
                 queryParams: {
                     carId: this.carId,
-                    startDate: startDate.toISOString(),
-                    endDate: endDate.toISOString(),
+                    startDate: startDateFormatted,
+                    endDate: endDateFormatted,
                     totalAmount: totalAmount
                 }
             });

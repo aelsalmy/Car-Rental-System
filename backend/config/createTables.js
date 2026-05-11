@@ -1,4 +1,4 @@
-const getConnection = require('../config/database')
+const pool = require('../config/database')
 
 
 const createUserTable = `
@@ -94,7 +94,7 @@ const createPaymentTable = `
 `;
 
 async function createTables(){
-    const connection = await getConnection();
+    const connection = await pool.getConnection();
 
     await connection.execute(createUserTable);
     console.log('User Table created or exists:');

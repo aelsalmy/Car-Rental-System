@@ -1,5 +1,10 @@
+-- Insert offices first (required by foreign key)
+INSERT INTO offices (name, location, phone, createdAt, updatedAt) VALUES
+('Downtown Branch', 'Cairo Downtown', '01000000001', NOW(), NOW()),
+('Airport Branch', 'Cairo International Airport', '01000000002', NOW(), NOW());
+
 -- Insert sample cars with diverse specifications
-INSERT INTO Cars (model, year, plateId, status, officeId, dailyRate, category, transmission, fuelType, seatingCapacity, features, description, createdAt, updatedAt) VALUES
+INSERT INTO cars (model, year, plateId, status, officeId, dailyRate, category, transmission, fuelType, seatingCapacity, features, description, createdAt, updatedAt) VALUES
 -- Sedans
 ('Toyota Camry', 2023, 'ABC123', 'active', 1, 45.00, 'sedan', 'automatic', 'gasoline', 5, '["Bluetooth","Backup Camera","Cruise Control"]', 'Comfortable mid-size sedan with excellent fuel economy', NOW(), NOW()),
 ('Honda Accord', 2023, 'DEF456', 'active', 1, 48.00, 'sedan', 'automatic', 'hybrid', 5, '["Lane Departure Warning","Apple CarPlay","Android Auto"]', 'Hybrid sedan with advanced safety features', NOW(), NOW()),
