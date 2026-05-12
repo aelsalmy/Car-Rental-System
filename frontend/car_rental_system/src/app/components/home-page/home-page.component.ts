@@ -10,7 +10,7 @@ import { CarRegistrationComponent } from '../car-registration/car-registration.c
   standalone: true,
   imports: [CarListingComponent , NgIf , CarRegistrationComponent , CarReservationsComponent],
   templateUrl: './home-page.component.html',
-  styleUrl: './home-page.component.scss'
+  styleUrl: './home-page.component.css'
 })
 export class HomePageComponent {
   @Input() activeView: string = ''

@@ -1,0 +1,14 @@
+{
+  "admin": {
+    "username": "admin",
+    "password": "admin123"
+  },
+  "customer": {
+    "username": "e2e_customer",
+    "password": "Passw0rd!",
+    "name": "E2E Customer",
+    "email": "e2e.customer@example.com",
+    "phone": "01000000000",
+    "address": "123 Test Street"
+  }
+}

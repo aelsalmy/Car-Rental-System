@@ -3,7 +3,12 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest --runInBand"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "setupFiles": ["<rootDir>/tests/setupEnv.js"],
+    "testPathIgnorePatterns": ["/node_modules/"]
   },
   "keywords": [],
   "author": "",
@@ -17,5 +22,9 @@
     "jsonwebtoken": "^9.0.2",
     "mysql2": "^3.12.0",
     "sequelize": "^6.37.5"
+  },
+  "devDependencies": {
+    "jest": "^30.4.2",
+    "supertest": "^7.2.2"
   }
 }
